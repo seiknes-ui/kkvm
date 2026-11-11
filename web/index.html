@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="nb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Luftbrems – treningssimulator</title>
+  <meta name="description" content="Interaktiv simulator av trykkluftbremsene på lastebil med tilhenger, med oppdrag, eksperimenter og kunnskapstest for førerkort C/CE.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%231d6fe0'/%3E%3Cpath d='M16 16 L24 9' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='3' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/stil.css">
+</head>
+<body>
+  <header class="topp">
+    <div class="merke">
+      <svg class="merke-ikon" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="14" />
+        <path d="M16 16 L24 9" />
+        <circle cx="16" cy="16" r="3" class="nav" />
+      </svg>
+      <div>
+        <h1>Luftbrems</h1>
+        <p>Treningssimulator for trykkluftbremser · førerkort C/CE</p>
+      </div>
+    </div>
+    <div class="topp-hoyre">
+      <div class="fremgang" id="fremgang" aria-live="polite"></div>
+      <button class="ikonknapp" id="tema" title="Bytt mellom lyst og mørkt tema" aria-label="Bytt tema">◐</button>
+    </div>
+  </header>
+
+  <main class="oppsett">
+    <section class="hoved">
+      <div class="kort forerhus">
+        <div class="manometre">
+          <figure class="manometer"><svg id="mano1" viewBox="0 0 200 200"></svg><figcaption><span class="prikk k1"></span>Krets 1 <span class="prikk k2"></span>Krets 2</figcaption></figure>
+          <figure class="manometer"><svg id="mano2" viewBox="0 0 200 200"></svg><figcaption><span class="prikk k3"></span>Krets 3 <span class="prikk tt"></span>Tilhengertank</figcaption></figure>
+        </div>
+        <div class="lamper" id="lamper"></div>
+        <dl class="avlesning" id="avlesning"></dl>
+      </div>
+
+      <div class="kort skjemakort">
+        <div class="kort-topp">
+          <h2>Systemskjema</h2>
+          <div class="skala" aria-hidden="true"><span>0 bar</span><i></i><span>10 bar</span></div>
+        </div>
+        <div class="rull"><svg id="skjema" viewBox="0 0 1090 620" role="img" aria-label="Skjema over bremsesystemet"></svg></div>
+        <p class="hjelp">Klikk på en komponent for å lese om den. Klikk på en tank for å tappe den, og på koblingene for å koble til eller fra.</p>
+      </div>
+
+      <div class="kort kjoretoykort">
+        <div class="kort-topp"><h2>Vogntoget</h2><span class="hjelp">Rød glød = bremsekraft på hjulene</span></div>
+        <div class="rull"><svg id="kjoretoy" viewBox="0 0 1000 210" role="img" aria-label="Lastebil med tilhenger"></svg></div>
+      </div>
+
+      <div class="kort grafkort">
+        <div class="kort-topp"><h2>Trykk over tid</h2><span class="hjelp">siste 3 minutter simulert tid · klikk for å vise/skjule</span></div>
+        <div class="seriebrytere" id="serier"></div>
+        <canvas id="graf" height="180"></canvas>
+      </div>
+
+      <div class="kort loggkort">
+        <div class="kort-topp"><h2>Hendelseslogg</h2><button class="lenkeknapp" id="toemLogg">Tøm loggen</button></div>
+        <ol class="logg" id="logg"></ol>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="kort betjening">
+        <h2>Betjening</h2>
+
+        <div class="gruppe">
+          <div class="rad">
+            <button class="knapp motor" id="motor" aria-pressed="false">Start motor</button>
+            <label class="glider">
+              <span>Turtall <output id="turtallUt">600</output> o/min</span>
+              <input type="range" id="turtall" min="600" max="2000" step="100" value="600">
+            </label>
+          </div>
+        </div>
+
+        <div class="gruppe">
+          <div class="rad">
+            <button class="pedal" id="pedalknapp" aria-label="Tråkk bremsen helt ned (hold inne)">
+              <span class="pedal-flate"></span>
+              <span class="pedal-tekst">TRÅKK<small>hold · B</small></span>
+            </button>
+            <label class="glider">
+              <span>Bremsepedal <output id="pedalUt">0</output> %</span>
+              <input type="range" id="pedal" min="0" max="100" step="1" value="0">
+            </label>
+          </div>
+        </div>
+
+        <div class="gruppe">
+          <label class="glider">
+            <span>Håndbremsspak <output id="haandUt">PARK</output></span>
+            <input type="range" id="haand" min="0" max="100" step="1" value="100">
+            <span class="ytter"><span>Kjør</span><span>gradert</span><span>Park</span></span>
+          </label>
+          <div class="rad tett">
+            <div class="segment" role="group" aria-label="Håndbrems">
+              <button data-haand="0">Kjør</button><button data-haand="100">Park</button>
+            </div>
+            <label class="bryter"><input type="checkbox" id="kontroll"><span></span>Kontrollstilling</label>
+          </div>
+        </div>
+
+        <div class="gruppe">
+          <div class="rad tett">
+            <div class="segment" id="fart" role="group" aria-label="Simuleringsfart">
+              <button data-fart="1" class="valgt">1×</button><button data-fart="2">2×</button><button data-fart="5">5×</button><button data-fart="10">10×</button><button data-fart="20">20×</button>
+            </div>
+            <button class="knapp diskret" id="pause">Pause</button>
+          </div>
+          <div class="rad tett">
+            <button class="knapp diskret" id="fyll">Fyll til 10 bar</button>
+            <button class="knapp diskret" id="tom">Tøm systemet</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="kort faner">
+        <div class="fanerad" role="tablist" id="fanerad">
+          <button role="tab" data-fane="oppdrag" aria-selected="true">Oppdrag</button>
+          <button role="tab" data-fane="eksperiment">Eksperiment</button>
+          <button role="tab" data-fane="finnfeil">Finn feilen</button>
+          <button role="tab" data-fane="test">Test</button>
+          <button role="tab" data-fane="verksted">Verksted</button>
+          <button role="tab" data-fane="fagstoff">Fagstoff</button>
+        </div>
+        <div class="faneinnhold" id="faneinnhold"></div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="bunn">
+    Verdiene er typiske og ment for opplæring. Følg alltid produsentens verdier og instruktørens anvisninger for et konkret kjøretøy.
+  </footer>
+
+  <script src="js/bremsemodell.js"></script>
+  <script src="js/innhold.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

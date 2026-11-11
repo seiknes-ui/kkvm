@@ -1,0 +1,43 @@
+# Luftbrems – treningssimulator (web)
+
+Nettversjonen av bremsesimulatoren, laget for opplæring til førerkort C/CE. Den bruker samme fysikkmodell som Python-versjonen i `lastebil_brems/`, overført til JavaScript.
+
+## Kjøre
+
+Åpne `index.html` i en nettleser. Siden trenger ingen server, ingen installasjon og ingen internettforbindelse.
+
+Siden kan også legges ut som en statisk nettside, for eksempel med GitHub Pages.
+
+## Innhold
+
+- **Førerhus:** to manometre (krets 1/2 og krets 3/tilhengertank), varsellamper og avlesninger.
+- **Systemskjema:** rørene farges etter trykk, og prikker viser hvor lufta strømmer. Klikk på en komponent for å lese om den, på en tank for å tappe den, og på koblingene for å koble til eller fra.
+- **Vogntoget:** hjulene gløder rødt etter bremsekraft. Slangene og den røde og sorte knappen på tilhengeren kan klikkes.
+- **Betjening:** motor, turtall, bremsepedal (hold B eller mellomrom), håndbrems med kontrollstilling, og simuleringsfart opptil 20×.
+- **Oppdrag:** 11 guidede øvelser. Stegene krysses av automatisk, og kontrollspørsmålene må besvares.
+- **Eksperiment:** 6 oppgaver der eleven gjetter først og tester etterpå.
+- **Finn feilen:** en tilfeldig, skjult feil som eleven skal diagnostisere, med hint og poengtelling.
+- **Test:** 10 tilfeldige flervalgsspørsmål.
+- **Verksted:** legg inn lekkasjer og defekt lufttørker.
+- **Fagstoff:** kort om hver komponent, og hva sjåføren skal passe på.
+
+Fremgangen lagres i nettleseren (localStorage) på den maskinen eleven bruker.
+
+## Tester
+
+```
+node web/test/test_bremsemodell.js
+```
+
+Testene er de samme 18 som for Python-modellen.
+
+## Filer
+
+| Fil | Innhold |
+|---|---|
+| `index.html` | Siden |
+| `css/stil.css` | Utseende, lyst og mørkt tema |
+| `js/bremsemodell.js` | Fysikkmodellen |
+| `js/innhold.js` | Oppdrag, eksperimenter, skjulte feil, fagstoff og spørsmål |
+| `js/app.js` | Grensesnitt og logikk |
+| `test/test_bremsemodell.js` | Tester av modellen |
