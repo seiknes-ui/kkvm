@@ -660,5 +660,9 @@ class Simulator(tk.Tk):
                 g.create_line(*pkt, fill=farge, width=2, dash=strek, tags="kurve")
 
 
-if __name__ == "__main__":
+def main():
     Simulator().mainloop()
+
+
+if __name__ == "__main__":
+    main()

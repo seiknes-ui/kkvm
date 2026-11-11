@@ -11,6 +11,16 @@ python bremsesimulator.py      # starter simulatoren
 python test_bremsemodell.py    # kjører testene av fysikkmodellen
 ```
 
+### Installere som prosjekt (valgfritt)
+
+Prosjektet er beskrevet i `pyproject.toml`. Fra denne mappen:
+
+```
+pip install -e .[test]         # installerer, med pytest for testene
+bremsesimulator                # starter simulatoren fra hvor som helst
+pytest                         # kjører testene
+```
+
 ## Hva som er med
 
 | Del | Hva den gjør i modellen |

@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bremsesimulator"
+version = "0.2.0"
+description = "Simulator av trykkluftbremsene på en lastebil med tilhenger, for opplæring til førerkort C/CE"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []  # bare standardbiblioteket (tkinter)
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Natural Language :: Norwegian",
+    "Topic :: Education",
+    "Environment :: Win32 (MS Windows)",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.gui-scripts]
+bremsesimulator = "bremsesimulator:main"
+
+[tool.setuptools]
+py-modules = ["bremsemodell", "bremsesimulator"]
+
+[tool.pytest.ini_options]
+testpaths = ["."]
+python_files = ["test_*.py"]
