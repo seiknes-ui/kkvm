@@ -1,7 +1,7 @@
 """
 bremsemodell.py
 ================
-Fysikkmodell av trykkluftbremsesystemet på en lastebil (motorvogn, uten tilhenger).
+Fysikkmodell av trykkluftbremsesystemet på en lastebil med tilhenger.
 
 Modellerte komponenter:
   * Kompressor (ytelse avhenger av turtall og mottrykk)
@@ -11,6 +11,11 @@ Modellerte komponenter:
   * Fotbremsventil (to kretser) -> bremsesylindre foran (krets 1)
                                 -> reléventil -> kombisylindre bak (krets 2)
   * Håndbremsventil + relé (krets 3) -> fjærbremsdelen i kombisylindrene bak
+  * Tilhengerstyreventil (krets 3, via overstrømningsventil) med trekkbilbeskyttelse
+      -> rød kobling (forsyning) og gul kobling (styreledning)
+  * Tilhenger: nødrelé, lufttank, driftsbremssylindre og fjærbrems
+      med rød knapp (parkering) og sort knapp (løse nødbremsen ved skifting)
+  * Kontrollstilling på håndbremsventilen (løser tilhengerens bremser)
   * Lekkasjer, vann i tankene, varsellampe for lavt trykk
 
 Enheter: trykk i bar overtrykk (manometertrykk), volum i liter,
@@ -66,6 +71,21 @@ LEKKASJEPUNKT = {
     "Bak": "Bremsesylinder bak (lekker bare ved bremsing)",
 }
 VANN_PER_NL = 0.05        # ml vann per NL luft når lufttørkeren er defekt
+
+# --- Tilhenger -----------------------------------------------------------------
+P_ROD = 8.5               # trykkbegrensning i rød ledning (forsyning til tilhengeren)
+OVERSTROM = (6.0, 7.0)    # overstrømningsventil: krets 3 forsyner tilhengeren bare over dette
+K_ROD = 4.0               # fylling av rød ledning, NL/s per bar
+K_GUL_FYLL = 2.0          # fylling av gul ledning (styreledning), NL/s per bar
+K_TILH_TANK = 3.0         # fylling av tilhengertanken via nødreléet, NL/s per bar
+P_NOD_LOS = 5.0           # over dette trykket i rød ledning er tilhengerens nødbrems løst
+P_NOD_PAA = 2.5           # under dette trykket er nødbremsen helt på
+TP_TID = 1.0              # trekkbilbeskyttelse: sekunder før rød ledning luftes ut
+LEKKASJEPUNKT_TILHENGER = {
+    "Rod": "Rød ledning (forsyning)",
+    "Gul": "Gul ledning (styreledning) - revnet slange",
+    "TT": "Tilhengerens lufttank",
+}
 
 
 def _klem(x, lo=0.0, hi=1.0):
@@ -125,6 +145,12 @@ class Bremsesystem:
         self.foran = Beholder("Bremsesylindre foran", 1.2)
         self.bak = Beholder("Kombisylindre bak - driftsbremsdel", 1.6)
         self.fjaer = Beholder("Kombisylindre bak - fjærbremsdel", 2.4)
+        # Tilhenger
+        self.rod = Beholder("Rød ledning (forsyning)", 1.0)
+        self.gul = Beholder("Gul ledning (styreledning)", 0.5)
+        self.t_tank = Beholder("Tilhengertank", 60.0)
+        self.t_drift = Beholder("Tilhenger - bremsesylindre", 4.0)
+        self.t_fjaer = Beholder("Tilhenger - fjærbremsdel", 4.8)
 
         # Betjening
         self.motor_paa = False
@@ -132,8 +158,13 @@ class Bremsesystem:
         self.pedal = 0.0          # 0..1
         self.haandbrems = 1.0     # 0 = kjørestilling, 1 = parkert
         self.torker_defekt = False
-        self.lekkasje = {k: "Ingen" for k in LEKKASJEPUNKT}
+        self.lekkasje = {k: "Ingen" for k in {**LEKKASJEPUNKT, **LEKKASJEPUNKT_TILHENGER}}
         self.skjult_feil = None   # f.eks. ("K2", "Middels") eller ("torker", None)
+        self.rod_koblet = True
+        self.gul_koblet = True
+        self.t_rod_knapp_ute = False   # rød knapp trukket ut = tilhengerens fjærbrems på
+        self.t_sort_knapp_inne = False  # sort knapp trykket inn = nødbremsen løst (skifting)
+        self.kontrollstilling = False
 
         # Tilstand
         self.lader = True
@@ -144,13 +175,18 @@ class Bremsesystem:
         self._pedal_nede = False
         self._motor_start = None
         self._fjaer_status = "paa"
+        self.tp_aktiv = False
+        self._tp_teller = 0.0
+        self._t_nod_status = "paa"
+        self._t_fjaer_status = "los"
 
     # ------------------------------------------------------------------ hjelp
     def _logg(self, tekst):
         self.logg.append((self.tid, tekst))
 
     def alle_noder(self):
-        return [self.forsyning, *self.tanker.values(), self.foran, self.bak, self.fjaer]
+        return [self.forsyning, *self.tanker.values(), self.foran, self.bak, self.fjaer,
+                self.rod, self.gul, self.t_tank, self.t_drift, self.t_fjaer]
 
     def _lekk_k(self, punkt):
         k = LEKKASJENIVAA[self.lekkasje.get(punkt, "Ingen")]
@@ -177,8 +213,32 @@ class Bremsesystem:
         return max(_klem(self.bak.trykk / P_FULL_BREMS), self.fjaerbrems_andel * FJAER_KRAFT)
 
     @property
+    def rod_tilhengerside(self):
+        return self.rod.trykk if self.rod_koblet else 0.0
+
+    @property
+    def gul_tilhengerside(self):
+        return self.gul.trykk if self.gul_koblet else 0.0
+
+    @property
+    def tilh_nod_andel(self):
+        """Hvor mye tilhengerens nødrelé bremser fordi rød ledning mangler trykk (0..1)."""
+        if self.t_sort_knapp_inne:
+            return 0.0
+        return _klem((P_NOD_LOS - self.rod_tilhengerside) / (P_NOD_LOS - P_NOD_PAA))
+
+    @property
+    def tilh_fjaer_andel(self):
+        return _klem((P_FJAER_LOS - self.t_fjaer.trykk) / (P_FJAER_LOS - P_FJAER_PAA))
+
+    @property
+    def bremsekraft_tilhenger(self):
+        return max(_klem(self.t_drift.trykk / P_FULL_BREMS), self.tilh_fjaer_andel * FJAER_KRAFT)
+
+    @property
     def kjoreklar(self):
-        return not self.varsel and self.fjaerbrems_andel < 0.02
+        tilhenger_ok = not self.rod_koblet or self.bremsekraft_tilhenger < 0.02
+        return not self.varsel and self.fjaerbrems_andel < 0.02 and tilhenger_ok
 
     # ------------------------------------------------------------- betjening
     def sett_motor(self, paa):
@@ -201,6 +261,63 @@ class Bremsesystem:
             self._logg("Håndbremsspaken satt i parkeringsstilling.")
         self.haandbrems = h
 
+    def sett_kobling(self, farge, koblet):
+        if farge == "rod":
+            if koblet == self.rod_koblet:
+                return
+            self.rod_koblet = koblet
+            if koblet:
+                self._logg("Rød kobling (forsyning) tilkoblet.")
+                if not self.gul_koblet:
+                    self._logg("  ADVARSEL: Rød er koblet før gul! Nødbremsen løses, men tilhengeren kan ikke "
+                               "driftsbremses uten styreledning%s. Riktig rekkefølge: gul først, så rød."
+                               % ("" if self.t_rod_knapp_ute else " - og den er ikke parkert"))
+            else:
+                self._logg("Rød kobling frakoblet - tilhengerens nødbrems slår inn (pssst!).")
+        else:
+            if koblet == self.gul_koblet:
+                return
+            self.gul_koblet = koblet
+            if koblet:
+                self._logg("Gul kobling (styreledning) tilkoblet.")
+            else:
+                self._logg("Gul kobling (styreledning) frakoblet.")
+                if self.rod_koblet:
+                    self._logg("  ADVARSEL: Rød er fortsatt tilkoblet - tilhengeren kan ikke driftsbremses! "
+                               "Riktig rekkefølge ved frakobling: rød først, så gul.")
+
+    def sett_rod_knapp(self, ute):
+        if ute == self.t_rod_knapp_ute:
+            return
+        self.t_rod_knapp_ute = ute
+        if ute:
+            self._logg("Rød knapp på tilhengeren trukket ut - tilhengerens fjærbrems settes på.")
+        else:
+            self._logg("Rød knapp på tilhengeren trykket inn - fjærbremsen løses (krever luft i tilhengertanken).")
+
+    def sett_sort_knapp(self, inne):
+        if inne == self.t_sort_knapp_inne:
+            return
+        if inne and self.rod_tilhengerside > P_NOD_LOS:
+            self._logg("Sort knapp: rød ledning har trykk, så knappen spretter ut igjen.")
+            return
+        self.t_sort_knapp_inne = inne
+        if inne:
+            self._logg("Sort knapp trykket inn - nødbremsen løses med luft fra tilhengertanken (bare for skifting!).")
+        else:
+            self._logg("Sort knapp trukket ut - nødbremsen virker igjen.")
+
+    def sett_kontrollstilling(self, paa):
+        if paa == self.kontrollstilling:
+            return
+        self.kontrollstilling = paa
+        if paa:
+            self._logg("Kontrollstilling: tilhengerens bremser løses"
+                       + (" - sjekk at trekkbilen alene holder vogntoget." if self.haandbrems >= 0.95
+                          else " (virker bare når spaken står i parkeringsstilling)."))
+        else:
+            self._logg("Kontrollstilling av - tilhengeren bremses igjen av parkeringsbremsen.")
+
     def sett_torker(self, defekt):
         if defekt and not self.torker_defekt:
             self._logg("Lufttørkeren er defekt - fuktig luft sendes ut i tankene.")
@@ -212,6 +329,10 @@ class Bremsesystem:
         self.lader = True
         self._oppdater_varsel(stille=True)
         self._fjaer_status = "paa"
+        self.tp_aktiv = False
+        self._tp_teller = 0.0
+        self._t_nod_status = "paa" if self.tilh_nod_andel > 0.98 else "los"
+        self._t_fjaer_status = "paa"
         self._logg("Systemet er tømt for luft (0 bar).")
 
     def fyll_systemet(self):
@@ -223,7 +344,16 @@ class Bremsesystem:
         self.lader = False
         self._oppdater_varsel(stille=True)
         self._fjaer_status = "los" if self.fjaerbrems_andel < 0.02 else "paa"
-        self._logg("Systemet er fylt til %.1f bar." % UTKOBLING)
+        # Tilhenger: rød ledning og tilhengertank fylt, bremsesylindrene følger styringen
+        self.rod.trykk = P_ROD
+        self.gul.trykk = self.t_drift.trykk = 0.0
+        self.t_tank.trykk = P_ROD
+        self.t_fjaer.trykk = 0.0 if self.t_rod_knapp_ute else P_ROD
+        self.tp_aktiv = False
+        self._tp_teller = 0.0
+        self._t_nod_status = "paa" if self.tilh_nod_andel > 0.98 else "los"
+        self._t_fjaer_status = "los" if self.tilh_fjaer_andel < 0.02 else "paa"
+        self._logg("Systemet er fylt til %.1f bar (tilhengeren til %.1f bar)." % (UTKOBLING, P_ROD))
 
     def tapp_vann(self):
         vann = sum(t.vann for t in self.tanker.values())
@@ -280,10 +410,51 @@ class Bremsesystem:
         maal_fj = 0.0 if self.haandbrems >= 0.95 else k3.trykk * (1 - self.haandbrems)
         self._styr_sylinder(k3, self.fjaer, maal_fj, dt)
 
+        # 4b) Tilhengerstyreventil på trekkbilen (forsynt fra krets 3 via overstrømningsventil)
+        styr_fot = self.pedal * P_STYR_MAKS
+        if self.haandbrems >= 0.95:
+            styr_haand = 0.0 if self.kontrollstilling else P_ROD
+        else:
+            styr_haand = P_ROD * self.haandbrems  # gradert håndbrems bremser også tilhengeren
+        maal_gul = min(max(styr_fot, styr_haand), P_ROD)
+        self._styr_sylinder(k3, self.gul, maal_gul, dt, k_fyll=K_GUL_FYLL)
+
+        # Trekkbilbeskyttelse: gul ledning bygger ikke trykk ved bremsing -> luft ut rød ledning
+        if styr_fot > 1.0 and self.gul.trykk < 0.5 * min(maal_gul, k3.trykk):
+            self._tp_teller += dt
+        if self.pedal < 0.1:
+            self._tp_teller = 0.0
+            if self.tp_aktiv:
+                self.tp_aktiv = False
+                self._logg("Bremsepedalen er sluppet - rød ledning fylles igjen.")
+        if not self.tp_aktiv and self._tp_teller >= TP_TID:
+            self.tp_aktiv = True
+            self._logg("TREKKBILBESKYTTELSE: Styreledningen (gul) holder ikke trykk - rød ledning luftes ut, "
+                       "tilhengeren nødbremser!")
+        if self.tp_aktiv:
+            slipp_ut(self.rod, K_TOM, dt)
+        else:
+            aapning = _klem((k3.trykk - OVERSTROM[0]) / (OVERSTROM[1] - OVERSTROM[0]))
+            self._styr_sylinder(k3, self.rod, P_ROD, dt, k_fyll=K_ROD * aapning)
+
+        # 4c) Tilhengeren: nødrelé, tank, driftsbrems og fjærbrems
+        if self.rod_koblet:
+            overfor(self.rod, self.t_tank, K_TILH_TANK, dt)
+        if self.t_sort_knapp_inne and self.rod_tilhengerside > P_NOD_LOS:
+            self.t_sort_knapp_inne = False
+            self._logg("Sort knapp spratt ut - rød ledning har trykk, nødbremsen virker igjen.")
+        maal_t = max(self.gul_tilhengerside, self.tilh_nod_andel * P_STYR_MAKS)
+        self._styr_sylinder(self.t_tank, self.t_drift, maal_t, dt)
+        maal_tf = 0.0 if self.t_rod_knapp_ute else self.t_tank.trykk
+        self._styr_sylinder(self.t_tank, self.t_fjaer, maal_tf, dt)
+
         # 5) Lekkasjer
         for punkt in ("K1", "K2", "K3", "K4"):
             slipp_ut(self.tanker[punkt], self._lekk_k(punkt), dt)
         slipp_ut(self.bak, self._lekk_k("Bak"), dt)
+        slipp_ut(self.rod, self._lekk_k("Rod"), dt)
+        slipp_ut(self.gul, self._lekk_k("Gul"), dt)
+        slipp_ut(self.t_tank, self._lekk_k("TT"), dt)
 
         # 6) Pumpetelling, varsling og fjærbremsstatus
         if self.pedal > 0.8 and not self._pedal_nede:
@@ -295,11 +466,12 @@ class Bremsesystem:
             self._pedal_nede = False
         self._oppdater_varsel()
         self._oppdater_fjaer()
+        self._oppdater_tilhenger()
 
-    def _styr_sylinder(self, tank, sylinder, maal, dt):
+    def _styr_sylinder(self, tank, sylinder, maal, dt, k_fyll=K_FYLL):
         """Balansert ventil: fyller fra tanken eller lufter ut til trykket er lik målet."""
         if sylinder.trykk < maal - DODBAND:
-            overfor(tank, sylinder, K_FYLL, dt, maks_til=maal)
+            overfor(tank, sylinder, k_fyll, dt, maks_til=maal)
         elif sylinder.trykk > maal + DODBAND:
             slipp_ut(sylinder, K_TOM, dt, ned_til=maal)
 
@@ -331,3 +503,22 @@ class Bremsesystem:
         elif kjorestilling and self._fjaer_status == "los":
             self._logg("Fjærbremsen begynner å slå inn - trykket i krets 3 er %.1f bar." % self.tanker["K3"].trykk)
         self._fjaer_status = ny
+
+    def _oppdater_tilhenger(self):
+        a = self.tilh_nod_andel
+        ny = "paa" if a > 0.98 else ("los" if a < 0.02 else self._t_nod_status)
+        if ny != self._t_nod_status:
+            if ny == "paa":
+                self._logg("Tilhengerens NØDBREMS er på (rød ledning: %.1f bar)." % self.rod_tilhengerside)
+            else:
+                self._logg("Tilhengerens nødbrems er løst.")
+            self._t_nod_status = ny
+        a = self.tilh_fjaer_andel
+        ny = "paa" if a > 0.98 else ("los" if a < 0.02 else self._t_fjaer_status)
+        if ny != self._t_fjaer_status:
+            if ny == "paa":
+                self._logg("Tilhengerens fjærbrems er på" + (" (rød knapp er ute)." if self.t_rod_knapp_ute
+                                                              else " - for lite luft i tilhengertanken!"))
+            else:
+                self._logg("Tilhengerens fjærbrems er løst.")
+            self._t_fjaer_status = ny

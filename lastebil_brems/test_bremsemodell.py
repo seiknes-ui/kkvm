@@ -120,6 +120,94 @@ def test_vann_ved_defekt_torker():
     assert sum(t.vann for t in m.tanker.values()) == 0
 
 
+# ------------------------------------------------------------------ tilhenger
+def test_tilhenger_folger_bremsepedalen():
+    m = ny(haand=0.0)
+    m.kjor(5)
+    assert m.bremsekraft_tilhenger < 0.02 and m.kjoreklar
+    m.pedal = 0.5
+    m.kjor(3)
+    assert abs(m.gul.trykk - 5.0) < 0.2 and abs(m.t_drift.trykk - 5.0) < 0.3, (m.gul.trykk, m.t_drift.trykk)
+    m.pedal = 0.0
+    m.kjor(3)
+    assert m.t_drift.trykk < 0.1
+
+
+def test_parkering_bremser_tilhengeren_og_kontrollstilling_loser():
+    m = ny(haand=1.0)
+    m.kjor(5)
+    assert m.t_drift.trykk > 8.0
+    m.sett_kontrollstilling(True)
+    m.kjor(5)
+    assert m.t_drift.trykk < 0.1 and m.bremsekraft_tilhenger < 0.02
+    assert m.fjaerbrems_andel > 0.98  # trekkbilen holder alene
+
+
+def test_frakobling_av_rod_gir_nodbrems():
+    m = ny(haand=0.0)
+    m.kjor(5)
+    m.sett_kobling("rod", False)
+    m.kjor(3)
+    assert m.tilh_nod_andel > 0.98 and m.t_drift.trykk > 7.5
+    assert any("NØDBREMS er på" in t for _, t in m.logg)
+
+
+def test_feil_rekkefolge_varsles():
+    m = ny()
+    m.sett_kobling("rod", False)
+    m.sett_kobling("gul", False)
+    m.sett_kobling("rod", True)
+    assert any("Rød er koblet før gul" in t for _, t in m.logg)
+    m2 = ny()
+    m2.sett_kobling("gul", False)
+    assert any("Rød er fortsatt tilkoblet" in t for _, t in m2.logg)
+
+
+def test_trekkbilbeskyttelse_ved_revnet_gul_ledning():
+    m = ny(haand=0.0)
+    m.kjor(5)
+    m.lekkasje["Gul"] = "Stor"
+    m.pedal = 1.0
+    m.kjor(5)
+    assert m.tp_aktiv
+    assert m.rod.trykk < 1.0 and m.tilh_nod_andel > 0.98
+    m.pedal = 0.0
+    m.kjor(10)
+    assert not m.tp_aktiv and m.rod.trykk > 6.0  # fylt igjen (krets 3 har tapt litt luft)
+
+
+def test_sort_knapp_loser_nodbrems_ved_skifting():
+    m = ny(haand=0.0)
+    m.kjor(5)
+    m.sett_kobling("rod", False)
+    m.sett_kobling("gul", False)
+    m.kjor(3)
+    assert m.t_drift.trykk > 7.5
+    m.sett_sort_knapp(True)
+    m.kjor(3)
+    assert m.t_drift.trykk < 0.1
+    m.sett_kobling("gul", True)
+    m.sett_kobling("rod", True)
+    m.kjor(3)
+    assert not m.t_sort_knapp_inne
+
+
+def test_rod_knapp_parkerer_tilhengeren():
+    m = ny(haand=0.0)
+    m.kjor(5)
+    m.sett_rod_knapp(True)
+    m.kjor(5)
+    assert m.tilh_fjaer_andel > 0.98
+
+
+def test_tilhenger_tappes_ikke_for_trekkbilen():
+    m = ny(haand=0.0)
+    m.t_tank.trykk = 0.0
+    m.kjor(30)
+    assert m.tanker["K3"].trykk > 5.9, m.tanker["K3"].trykk
+    assert m.fjaerbrems_andel < 0.2
+
+
 if __name__ == "__main__":
     tester = [(n, f) for n, f in sorted(globals().items()) if n.startswith("test_")]
     feil = 0

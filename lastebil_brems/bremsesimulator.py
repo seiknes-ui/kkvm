@@ -28,9 +28,11 @@ SERIER = [  # (navn, farge, strek, funksjon)
     ("Krets 2", "#2ca02c", None, lambda m: m.tanker["K2"].trykk),
     ("Krets 3", "#1f77b4", None, lambda m: m.tanker["K3"].trykk),
     ("Krets 4", "#9467bd", None, lambda m: m.tanker["K4"].trykk),
-    ("Sylinder foran", "#ff7f0e", (4, 2), lambda m: m.foran.trykk),
-    ("Sylinder bak", "#8c564b", (4, 2), lambda m: m.bak.trykk),
-    ("Fjærbremsdel", "#17becf", (4, 2), lambda m: m.fjaer.trykk),
+    ("Syl. foran", "#ff7f0e", (4, 2), lambda m: m.foran.trykk),
+    ("Syl. bak", "#8c564b", (4, 2), lambda m: m.bak.trykk),
+    ("Fjærbrems", "#17becf", (4, 2), lambda m: m.fjaer.trykk),
+    ("Tilhengertank", "#e377c2", None, lambda m: m.t_tank.trykk),
+    ("Tilh. sylinder", "#7f7f7f", (4, 2), lambda m: m.t_drift.trykk),
 ]
 
 OVELSER = {
@@ -84,7 +86,8 @@ OVELSER = {
         "MÅL: Feilsøke som en sjåfør.\n"
         "Simulatoren har lagt inn en tilfeldig, skjult feil. Systemet er fullt, motoren står.\n"
         "Bruk det du har lært: lekkasjekontroll med og uten pedal, pumpetest, motorstart,\n"
-        "tapping av tankene osv. Hvilken krets eller komponent er det noe galt med?\n"
+        "tapping av tankene osv. Feilen kan også være på tilhengeren eller i slangene.\n"
+        "Hvilken krets eller komponent er det noe galt med?\n"
         "Trykk 'Vis fasit' når du har en teori."
     ),
     "7. Vann i tankene (lufttørker)": (
@@ -95,6 +98,54 @@ OVELSER = {
         "LÆRDOM: Vann i systemet kan fryse om vinteren og ødelegge ventiler. "
         "Kommer det vann ved tapping, må lufttørkeren sjekkes."
     ),
+    "8. Koble til tilhengeren": (
+        "MÅL: Koble til i riktig rekkefølge og fylle tilhengeren.\n"
+        "1) Trekkbilen er full og motoren går. Tilhengeren er frakoblet, tom for luft og parkert "
+        "(rød knapp ute).\n"
+        "2) Gå til fanen 'Tilhenger'. Koble GUL (styreledning) først, deretter RØD (forsyning).\n"
+        "3) Se at tilhengertanken fylles. Nødbremsen løses når rød ledning er over ca. 5 bar.\n"
+        "   Mens den tomme tanken lades, kan trykket i rød ledning falle, og nødbremsen slå inn igjen.\n"
+        "   Vent til tilhengertanken er full!\n"
+        "4) Trykk inn rød knapp når tanken har nok luft. Fjærbremsen løses over ca. 5,5 bar.\n"
+        "5) Løs parkeringsbremsen og tråkk på bremsen: bremser tilhengeren også?\n"
+        "6) Start øvelsen på nytt og koble rød før gul. Les advarselen i loggen.\n"
+        "TIPS: Sett simuleringsfarten til 5x."
+    ),
+    "9. Koble fra tilhengeren": (
+        "MÅL: Parkere og koble fra tilhengeren trygt.\n"
+        "1) Vogntoget er fullt og står parkert. Motoren står.\n"
+        "2) Trekk ut rød knapp på tilhengeren (fjærbremsen på).\n"
+        "3) Koble fra RØD først: hør 'pssst', og se at tilhengerens nødbrems slår inn.\n"
+        "4) Koble fra GUL.\n"
+        "5) Prøv motsatt rekkefølge (start øvelsen på nytt). Les advarselen i loggen.\n"
+        "LÆRDOM: Når rød er frakoblet, bremser tilhengeren alltid, selv om den ikke er parkert."
+    ),
+    "10. Kontrollstilling (trekkbilen alene)": (
+        "MÅL: Kontrollere at trekkbilens parkeringsbrems alene holder vogntoget.\n"
+        "1) Vogntoget er fullt og parkert. Håndbremsen bremser både bil og tilhenger "
+        "(tilhengeren via gul ledning).\n"
+        "2) Huk av 'Kontrollstilling' i fanen Betjening (spaken trekkes forbi parkering).\n"
+        "3) Se at tilhengerens bremsesylindre luftes ut, mens trekkbilens fjærbrems fortsatt er på.\n"
+        "4) I virkeligheten prøver du nå forsiktig å kjøre: vogntoget skal stå stille.\n"
+        "5) Slipp kontrollstillingen: tilhengeren bremses igjen."
+    ),
+    "11. Revnet styreledning (gul)": (
+        "MÅL: Forstå trekkbilbeskyttelsen.\n"
+        "1) Vogntoget er fullt, parkeringsbremsen er løst, og motoren går.\n"
+        "2) Øvelsen har lagt inn en revnet gul slange (styreledningen).\n"
+        "3) Tråkk bremsen helt ned (hold B). Gul ledning klarer ikke å bygge trykk.\n"
+        "4) Etter ca. 1 sekund lufter trekkbilen ut rød ledning, og tilhengeren nødbremser.\n"
+        "5) Slipp pedalen: rød ledning fylles igjen, og tilhengeren løser.\n"
+        "LÆRDOM: En revnet styreledning gir likevel bremsing av tilhengeren."
+    ),
+    "12. Skifte tilhenger (sort knapp)": (
+        "MÅL: Flytte en frakoblet tilhenger, f.eks. med skiftetraktor.\n"
+        "1) Tilhengeren er frakoblet, men har luft i tanken. Rød knapp er inne, så nødbremsen holder.\n"
+        "2) Trykk inn SORT knapp: nødbremsen løses med luft fra tilhengertanken.\n"
+        "3) Tilhengeren har nå INGEN brems - bare for skifting på plassen!\n"
+        "4) Koble til gul og rød: den sorte knappen spretter ut av seg selv.\n"
+        "5) Prøv også med lekkasje i tilhengertanken: hva skjer med fjærbremsen?"
+    ),
 }
 
 SKJULTE_FEIL = [
@@ -104,6 +155,9 @@ SKJULTE_FEIL = [
     (("K4", "Middels"), "Lekkasje i krets 4 (tilleggsutstyr)."),
     (("Bak", "Middels"), "Lekkasje i bremsesylinder bak - merkes bare når pedalen er nede."),
     (("torker", None), "Defekt lufttørker - det kommer vann når tankene tappes."),
+    (("TT", "Middels"), "Lekkasje i tilhengerens lufttank."),
+    (("Gul", "Stor"), "Revnet gul slange (styreledning) - trekkbilbeskyttelsen lufter ut rød ledning ved bremsing."),
+    (("Rod", "Middels"), "Lekkasje i rød ledning (forsyning til tilhengeren)."),
 ]
 
 
@@ -117,6 +171,7 @@ class Simulator(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Bremsesimulator - lastebil med trykkluftbrems")
+        self.geometry("+0+0")
         self.m = bm.Bremsesystem()
         self.m.tom_systemet()
         self.pause = False
@@ -137,10 +192,10 @@ class Simulator(tk.Tk):
         self.columnconfigure(1, weight=1)
         self.rowconfigure(0, weight=1)
 
-        self.skjema = tk.Canvas(venstre, width=900, height=400, bg="white", highlightthickness=1,
+        self.skjema = tk.Canvas(venstre, width=900, height=495, bg="white", highlightthickness=1,
                                 highlightbackground="#999")
         self.skjema.pack()
-        self.graf = tk.Canvas(venstre, width=900, height=150, bg="white", highlightthickness=1,
+        self.graf = tk.Canvas(venstre, width=900, height=92, bg="white", highlightthickness=1,
                               highlightbackground="#999")
         self.graf.pack(pady=(4, 0))
         self._tegn_skjema()
@@ -150,16 +205,19 @@ class Simulator(tk.Tk):
         self.faner.pack(fill="x")
         fane_betjening = ttk.Frame(self.faner, padding=4)
         fane_feil = ttk.Frame(self.faner, padding=4)
+        fane_tilhenger = ttk.Frame(self.faner, padding=4)
         fane_ovelse = ttk.Frame(self.faner, padding=4)
         self.faner.add(fane_betjening, text="Betjening")
+        self.faner.add(fane_tilhenger, text="Tilhenger")
         self.faner.add(fane_feil, text="Feil")
         self.faner.add(fane_ovelse, text="Øvelser")
         self._bygg_betjening(fane_betjening)
         self._bygg_feil(fane_feil)
+        self._bygg_tilhenger(fane_tilhenger)
         self._bygg_ovelser(fane_ovelse)
 
         ttk.Label(hoyre, text="Hendelseslogg", font=FONT_FET).pack(anchor="w", pady=(6, 0))
-        self.loggtekst = tk.Text(hoyre, width=48, height=6, font=("Consolas", 8), state="disabled",
+        self.loggtekst = tk.Text(hoyre, width=48, height=4, font=("Consolas", 8), state="disabled",
                                  wrap="word")
         self.loggtekst.pack(fill="both", expand=True)
         self._vis_ovelsestekst("Velg en øvelse over og trykk 'Start øvelse', eller eksperimenter fritt.\n\n"
@@ -204,6 +262,12 @@ class Simulator(tk.Tk):
         self._linje((530, 240, 560, 250), lambda: m.tanker["K3"].trykk)
         self._linje((680, 255, 720, 290), lambda: m.fjaer.trykk)
         self._linje((530, 330, 560, 340), lambda: m.tanker["K4"].trykk)
+        # Tilhenger
+        self._linje((665, 290, 665, 392), lambda: m.tanker["K3"].trykk)
+        self._linje((720, 412, 742, 412), lambda: m.rod.trykk)
+        self._linje((720, 462, 742, 462), lambda: m.gul.trykk)
+        self._linje((762, 412, 780, 412), lambda: m.rod_tilhengerside)
+        self._linje((762, 462, 780, 462), lambda: m.gul_tilhengerside)
 
         # Komponenter
         self.tekst["komp"] = self._boks(15, 165, 120, 235, "Kompressor")
@@ -222,7 +286,15 @@ class Simulator(tk.Tk):
         c.create_text(815, 145, text="luft fra\nkrets 2", font=("Segoe UI", 8), anchor="w", fill="#666")
         self.tekst["bak"] = self._boks(720, 220, 890, 325, "Kombisylindre bak")
         self.tekst["haand"] = self._boks(560, 215, 680, 290, "Håndbrems-ventil + relé")
-        self.tekst["ekstra"] = self._boks(560, 315, 680, 365, "Gir, luftfjæring m.m.")
+        self.tekst["ekstra"] = self._boks(560, 315, 650, 365, "Gir, luft-fjæring m.m.")
+        self.tekst["tsv"] = self._boks(600, 392, 720, 488, "Tilhenger-\nstyreventil")
+        self.tekst["tilh"] = self._boks(780, 340, 895, 488, "TILHENGER")
+        self.kobling = {
+            "rod": c.create_oval(742, 402, 762, 422, width=3),
+            "gul": c.create_oval(742, 452, 762, 472, width=3),
+        }
+        c.create_text(752, 437, text="rød", font=("Segoe UI", 8, "bold"), fill="#c00")
+        c.create_text(752, 482, text="gul", font=("Segoe UI", 8, "bold"), fill="#a08000")
 
         # Manometer (dobbeltviser som i førerhuset)
         cx, cy, r = 75, 85, 58
@@ -250,29 +322,28 @@ class Simulator(tk.Tk):
         # Varsellamper
         self.lamper = {}
         for i, (nokkel, navn) in enumerate([("lavt", "LAVT LUFTTRYKK"), ("park", "FJÆRBREMS PÅ"),
-                                            ("komp", "KOMPRESSOR LADER"), ("klar", "KJØREKLAR")]):
+                                            ("komp", "KOMPRESSOR LADER"), ("klar", "KJØREKLAR"),
+                                            ("tilh", "TILHENGER BREMSER")]):
             y = 262 + i * 34
             self.lamper[nokkel] = c.create_oval(20, y, 44, y + 24, fill="#444", outline="#222")
             c.create_text(52, y + 12, text=navn, font=FONT_FET, anchor="w")
 
     def _tegn_graf_bakgrunn(self):
         g = self.graf
-        self.gx0, self.gx1, self.gy0, self.gy1 = 40, 890, 25, 140
-        for bar in range(0, 13, 2):
+        self.gx0, self.gx1, self.gy0, self.gy1 = 40, 890, 22, 86
+        for bar in range(0, 13, 4):
             y = self._gy(bar)
             g.create_line(self.gx0, y, self.gx1, y, fill="#eee")
             g.create_text(self.gx0 - 4, y, text=str(bar), anchor="e", font=("Segoe UI", 8))
         g.create_line(self.gx0, self._gy(bm.VARSEL_PAA), self.gx1, self._gy(bm.VARSEL_PAA), fill="#f99",
                       dash=(2, 2))
         g.create_rectangle(self.gx0, self.gy0, self.gx1, self.gy1, outline="#999")
-        g.create_text(8, self.gy0 - 8, text="bar", anchor="w", font=("Segoe UI", 8))
-        x = 70
+        g.create_text(4, self.gy1 + 4, text="bar", anchor="nw", font=("Segoe UI", 8))
+        x = 40
         for navn, farge, strek, _ in SERIER:
             g.create_line(x, 10, x + 18, 10, fill=farge, width=2, dash=strek)
             t = g.create_text(x + 22, 10, text=navn, anchor="w", font=("Segoe UI", 8))
             x = g.bbox(t)[2] + 14
-        g.create_text(self.gx1, 10, text="siste %d s" % HISTORIKK_S, anchor="e", font=("Segoe UI", 8),
-                      fill="#666")
 
     def _gy(self, p):
         return self.gy1 - (self.gy1 - self.gy0) * min(p, 12) / 12
@@ -312,6 +383,11 @@ class Simulator(tk.Tk):
                  label="Håndbremsspak (0 = kjør, 100 = parkert)", length=270).grid(row=rad, column=0,
                                                                                  columnspan=2, sticky="w")
         rad += 1
+        self.kontroll_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(f, text="Kontrollstilling (løser tilhengerens bremser)", variable=self.kontroll_var,
+                        takefocus=0, command=lambda: self.m.sett_kontrollstilling(self.kontroll_var.get())).grid(
+            row=rad, column=0, columnspan=2, sticky="w")
+        rad += 1
 
         overskrift("Simulering")
         ttk.Label(f, text="Fart:").grid(row=rad, column=0, sticky="w")
@@ -348,6 +424,40 @@ class Simulator(tk.Tk):
         ttk.Button(f, text="Tapp vann fra tankene", command=self.m.tapp_vann, takefocus=0).grid(
             row=rad + 2, column=0, columnspan=2, sticky="we")
 
+    def _bygg_tilhenger(self, f):
+        m = self.m
+        ttk.Label(f, text="Koblinger", font=FONT_FET).grid(row=0, column=0, columnspan=2, sticky="w")
+        ttk.Label(f, text="Koble til: gul først, så rød.  Koble fra: rød først, så gul.",
+                  font=("Segoe UI", 8), foreground="#555").grid(row=1, column=0, columnspan=2, sticky="w")
+        self.gul_var = tk.BooleanVar(value=True)
+        self.rod_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(f, text="Gul kobling tilkoblet (styreledning)", variable=self.gul_var, takefocus=0,
+                        command=lambda: m.sett_kobling("gul", self.gul_var.get())).grid(row=2, column=0,
+                                                                                        columnspan=2, sticky="w")
+        ttk.Checkbutton(f, text="Rød kobling tilkoblet (forsyning)", variable=self.rod_var, takefocus=0,
+                        command=lambda: m.sett_kobling("rod", self.rod_var.get())).grid(row=3, column=0,
+                                                                                        columnspan=2, sticky="w")
+        ttk.Label(f, text="Knapper på tilhengeren", font=FONT_FET).grid(row=4, column=0, columnspan=2,
+                                                                        sticky="w", pady=(10, 0))
+        self.rodknapp_var = tk.BooleanVar(value=False)
+        self.sortknapp_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(f, text="RØD knapp trukket ut (parkeringsbrems på)", variable=self.rodknapp_var,
+                        takefocus=0, command=lambda: m.sett_rod_knapp(self.rodknapp_var.get())).grid(
+            row=5, column=0, columnspan=2, sticky="w")
+        ttk.Checkbutton(f, text="SORT knapp trykket inn (løser nødbremsen, skifting)",
+                        variable=self.sortknapp_var, takefocus=0,
+                        command=lambda: m.sett_sort_knapp(self.sortknapp_var.get())).grid(
+            row=6, column=0, columnspan=2, sticky="w")
+        ttk.Label(f, text="Lekkasjer", font=FONT_FET).grid(row=7, column=0, columnspan=2, sticky="w",
+                                                           pady=(10, 0))
+        for i, (punkt, navn) in enumerate(bm.LEKKASJEPUNKT_TILHENGER.items(), start=8):
+            ttk.Label(f, text=navn, font=("Segoe UI", 8), wraplength=190).grid(row=i, column=0, sticky="w",
+                                                                              pady=2)
+            v = tk.StringVar(value="Ingen")
+            ttk.Combobox(f, textvariable=v, values=list(bm.LEKKASJENIVAA), state="readonly",
+                         width=9).grid(row=i, column=1, sticky="e", padx=(6, 0))
+            self.lekk_var[punkt] = v
+
     def _bygg_ovelser(self, f):
         self.ovelse_var = tk.StringVar(value=list(OVELSER)[0])
         ttk.Combobox(f, textvariable=self.ovelse_var, values=list(OVELSER), state="readonly", width=44).pack(
@@ -370,7 +480,11 @@ class Simulator(tk.Tk):
         self.pause = not self.pause
         self.pause_knapp.config(text="Fortsett" if self.pause else "Pause")
 
-    def _sett_kontroller(self, motor=False, turtall=600, haand=100, lekk=None, torker=False, fyll=True):
+    def _sett_kontroller(self, motor=False, turtall=600, haand=100, lekk=None, torker=False, fyll=True,
+                         rod=True, gul=True, rodknapp=False, sortknapp=False, kontroll=False):
+        m = self.m
+        m.rod_koblet, m.gul_koblet = rod, gul
+        m.t_rod_knapp_ute, m.t_sort_knapp_inne, m.kontrollstilling = rodknapp, sortknapp, kontroll
         self.pedal_var.set(0)
         self.pedal_holdt = False
         self.turtall_var.set(turtall)
@@ -413,6 +527,19 @@ class Simulator(tk.Tk):
             self.motor_var.set(True)
             self.m.sett_motor(True)
             self.fart_var.set("5x")
+        elif nr == "8":
+            self._sett_kontroller(motor=True, haand=100, rod=False, gul=False, rodknapp=True)
+            m = self.m
+            m.t_tank.trykk = m.t_drift.trykk = m.t_fjaer.trykk = 0.0
+            m._t_fjaer_status = m._t_nod_status = "paa"
+            self.fart_var.set("5x")
+            self.faner.select(1)
+        elif nr in ("9", "10"):
+            self._sett_kontroller(motor=False, haand=100)
+        elif nr == "11":
+            self._sett_kontroller(motor=True, haand=0, lekk={"Gul": "Stor"})
+        elif nr == "12":
+            self._sett_kontroller(motor=False, haand=100, rod=False, gul=False)
         self._vis_ovelsestekst(navn + "\n\n" + OVELSER[navn])
 
     def _vis_fasit(self):
@@ -475,6 +602,22 @@ class Simulator(tk.Tk):
                          m.bak.trykk, m.fjaer.trykk, m.fjaerbrems_andel * 100, m.bremsekraft_bak * 100))
         c.itemconfig(self.tekst["haand"], text="spak %.0f %%\n%.2f bar ut" % (m.haandbrems * 100, m.fjaer.trykk))
         c.itemconfig(self.tekst["ekstra"], text="")
+        c.itemconfig(self.tekst["tsv"], text="gul ut: %.2f bar\nrød ut: %.2f bar\n%s" % (
+            m.gul.trykk, m.rod.trykk, "BESKYTTELSE AKTIV!" if m.tp_aktiv else
+            ("KONTROLLSTILLING" if m.kontrollstilling and m.haandbrems >= 0.95 else "")),
+            fill="#c00" if m.tp_aktiv else "black")
+        c.itemconfig(self.tekst["tilh"], text="tank: %.2f bar\nsylindre: %.2f bar\nfjærdel: %.2f bar\n"
+                                              "nødbrems: %.0f %%\nfjærbrems: %.0f %%\nbremsekraft: %.0f %%" % (
+                         m.t_tank.trykk, m.t_drift.trykk, m.t_fjaer.trykk, m.tilh_nod_andel * 100,
+                         m.tilh_fjaer_andel * 100, m.bremsekraft_tilhenger * 100))
+        for farge, koblet, fyll in (("rod", m.rod_koblet, "#d00000"), ("gul", m.gul_koblet, "#e6c000")):
+            c.itemconfig(self.kobling[farge], fill=fyll if koblet else "white", outline=fyll,
+                         dash=() if koblet else (3, 2))
+        for var, verdi in ((self.gul_var, m.gul_koblet), (self.rod_var, m.rod_koblet),
+                           (self.rodknapp_var, m.t_rod_knapp_ute), (self.sortknapp_var, m.t_sort_knapp_inne),
+                           (self.kontroll_var, m.kontrollstilling)):
+            if var.get() != verdi:
+                var.set(verdi)
 
         cx, cy, r = self.manometer
         for viser, p in ((self.viser1, m.tanker["K1"].trykk), (self.viser2, m.tanker["K2"].trykk)):
@@ -487,6 +630,7 @@ class Simulator(tk.Tk):
         c.itemconfig(self.lamper["park"], fill="#ff2020" if m.fjaerbrems_andel > 0.02 else "#444")
         c.itemconfig(self.lamper["komp"], fill="#ffbf00" if (m.motor_paa and m.lader) else "#444")
         c.itemconfig(self.lamper["klar"], fill="#20c020" if m.kjoreklar else "#444")
+        c.itemconfig(self.lamper["tilh"], fill="#ff2020" if m.bremsekraft_tilhenger > 0.02 else "#444")
 
         self._tegn_graf()
 

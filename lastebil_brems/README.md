@@ -1,6 +1,6 @@
 # Bremsesimulator – lastebil med trykkluftbrems
 
-En simulering av luftbremsesystemet på en lastebil, laget for opplæring til førerkort C/CE.
+En simulering av luftbremsesystemet på en lastebil med tilhenger, laget for opplæring til førerkort C/CE.
 
 ## Kjøre
 
@@ -22,8 +22,12 @@ python test_bremsemodell.py    # kjører testene av fysikkmodellen
 | Krets 3 | Håndbremsventil og relé til fjærbremsdelen i kombisylindrene bak. Fjærbremsen er på når det er lite luft, og trenger minst ca. 5,5 bar for å bli helt løst. |
 | Krets 4 | Tilleggsutstyr. |
 | Varsling | Lampen for lavt lufttrykk tennes under 5,5 bar i krets 1 eller 2. |
+| Tilhengerstyreventil | Forsynes fra krets 3 via en overstrømningsventil, slik at tilhengeren ikke tapper trekkbilen under ca. 6 bar. Gir trykk i rød ledning (maks 8,5 bar) og gul ledning (styres av fotbrems og håndbrems). |
+| Trekkbilbeskyttelse | Klarer ikke gul ledning å bygge trykk når du bremser (revnet slange), luftes rød ledning ut etter ca. 1 s, og tilhengeren nødbremser. |
+| Kontrollstilling | Løser tilhengerens bremser når håndbremsen står i parkering, så du kan sjekke at trekkbilen alene holder vogntoget. |
+| Tilhenger | Nødrelé, 60 liters tank, bremsesylindre og fjærbrems. Nødbremsen slår inn når rød ledning faller under ca. 5 bar (helt på under 2,5 bar). Rød knapp setter på parkeringsbremsen. Sort knapp løser nødbremsen ved skifting, og spretter ut av seg selv når rød kobles til. |
 
-Betjening: motor av/på og turtall, bremsepedal (hold **B** for å tråkke helt ned), håndbremsspak, lekkasjer i hver krets og i bremsesylinderen bak, defekt lufttørker, tapping av vann, og simuleringsfart opp til 20x.
+Betjening: motor av/på og turtall, bremsepedal (hold **B** for å tråkke helt ned), håndbremsspak med kontrollstilling, rød og gul kobling, rød og sort knapp på tilhengeren, lekkasjer (i hver krets, i bremsesylinderen bak, i rød og gul ledning og i tilhengertanken), defekt lufttørker, tapping av vann, og simuleringsfart opp til 20x.
 
 ## Øvelser
 
@@ -34,7 +38,12 @@ Betjening: motor av/på og turtall, bremsepedal (hold **B** for å tråkke helt 
 5. Kretssikring (firekretsventil)
 6. Finn feilen (skjult, tilfeldig feil, med fasit)
 7. Vann i tankene (lufttørker)
+8. Koble til tilhengeren (gul først, så rød)
+9. Koble fra tilhengeren (rød først, så gul)
+10. Kontrollstilling (trekkbilen alene holder vogntoget)
+11. Revnet styreledning (trekkbilbeskyttelse)
+12. Skifte tilhenger (sort knapp)
 
 ## Forbehold
 
-Trykk, volumer og tider er typiske verdier, ikke verdier for en bestemt bil. Modellen er forenklet: tilhenger, ABS/EBS, retarder og bilens bevegelse er ikke med. Grenseverdier ved kontroll skal du alltid hente fra produsenten eller instruktøren.
+Trykk, volumer og tider er typiske verdier, ikke verdier for en bestemt bil. Modellen er forenklet: ABS/EBS, lastavhengig bremsekraft (ALB), retarder og bilens bevegelse er ikke med. Grenseverdier ved kontroll skal du alltid hente fra produsenten eller instruktøren.
