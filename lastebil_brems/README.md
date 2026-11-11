@@ -21,6 +21,17 @@ bremsesimulator                # starter simulatoren fra hvor som helst
 pytest                         # kjører testene
 ```
 
+### Lage en frittstående .exe (uten Python)
+
+`Bremsesimulator.exe` kan kopieres til en hvilken som helst Windows-PC og startes med dobbeltklikk, uten at Python er installert. Bygg den fra denne mappen:
+
+```
+pip install pyinstaller
+pyinstaller --onefile --windowed --name Bremsesimulator bremsesimulator.py
+```
+
+Ferdig fil havner i `dist\Bremsesimulator.exe` (ca. 10 MB). Første oppstart tar noen sekunder.
+
 ## Hva som er med
 
 | Del | Hva den gjør i modellen |
