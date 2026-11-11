@@ -23,6 +23,7 @@
     </div>
     <div class="topp-hoyre">
       <div class="fremgang" id="fremgang" aria-live="polite"></div>
+      <button class="knapp primar rapportknapp" id="rapportKnapp">Rapport</button>
       <button class="ikonknapp" id="tema" title="Bytt mellom lyst og mørkt tema" aria-label="Bytt tema">◐</button>
     </div>
   </header>
@@ -136,6 +137,31 @@
   <footer class="bunn">
     Verdiene er typiske og ment for opplæring. Følg alltid produsentens verdier og instruktørens anvisninger for et konkret kjøretøy.
   </footer>
+
+  <dialog class="dialog" id="rapportdialog" aria-labelledby="rapportTittel">
+    <div class="dialog-topp">
+      <h2 id="rapportTittel">Rapport for levering</h2>
+      <button class="ikonknapp" id="lukkRapport" aria-label="Lukk">✕</button>
+    </div>
+    <div class="dialog-kropp">
+      <div class="rapport-skjema">
+        <p class="ingress">Rapporten viser alt du har gjort i simulatoren. Fyll inn navnet ditt, og lever den som PDF eller som fil.</p>
+        <label class="felt">Navn <input type="text" id="elevNavn" autocomplete="name" maxlength="80"></label>
+        <label class="felt">Klasse / gruppe <input type="text" id="elevKlasse" maxlength="60"></label>
+        <label class="felt"><span>Refleksjon – hva har du lært? <span class="valgfritt">(valgfritt)</span></span>
+          <textarea id="elevKommentar" rows="5" maxlength="3000"></textarea></label>
+        <p class="rapportmelding" id="rapportMelding" hidden>Skriv inn navnet ditt før du leverer.</p>
+        <div class="knapperad">
+          <button class="knapp primar" id="skrivUt">Skriv ut / lagre som PDF</button>
+          <button class="knapp" id="lastNed">Last ned som fil</button>
+        </div>
+        <p class="hjelp">PDF: velg «Lagre som PDF» som skriver i utskriftsvinduet.</p>
+        <button class="lenkeknapp fare" id="nullstill">Nullstill all fremgang …</button>
+      </div>
+      <div class="rapport-papir" id="rapportForhand"></div>
+    </div>
+  </dialog>
+  <div id="utskrift"></div>
 
   <script src="js/bremsemodell.js"></script>
   <script src="js/innhold.js"></script>

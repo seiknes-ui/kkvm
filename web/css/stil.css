@@ -402,3 +402,41 @@ svg { display: block; width: 100%; height: auto; }
 .fag p { margin: 0 0 8px; }
 .fag .sjafor { background: var(--aksent-myk); border-radius: 8px; padding: 8px 10px; margin: 0; }
 .fag.markert { border-color: var(--aksent); box-shadow: 0 0 0 3px var(--aksent-myk); }
+
+/* ---------------------------------------------------------------- rapport */
+.rapportknapp { padding: 7px 14px; font-size: 13.5px; }
+.dialog {
+  width: min(1180px, calc(100vw - 32px)); height: min(860px, calc(100vh - 32px)); max-width: none; max-height: none;
+  padding: 0; border: 1px solid var(--strek); border-radius: var(--radius); background: var(--kort); color: var(--blekk);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
+}
+.dialog[open] { display: flex; flex-direction: column; }
+.dialog::backdrop { background: rgba(8, 14, 22, .55); }
+.dialog-topp { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--strek); }
+.dialog-kropp { flex: 1; min-height: 0; display: grid; grid-template-columns: 320px minmax(0, 1fr); }
+.rapport-skjema { padding: 18px; overflow-y: auto; border-right: 1px solid var(--strek); }
+.felt { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+.felt input, .felt textarea {
+  font: inherit; font-weight: 400; font-size: 14px; padding: 8px 10px; border-radius: 9px;
+  border: 1px solid var(--strek-sterk); background: var(--kort-2); color: var(--blekk); resize: vertical;
+}
+.felt input:focus, .felt textarea:focus { outline: 2px solid var(--aksent); outline-offset: 0; border-color: var(--aksent); }
+.felt .valgfritt { font-weight: 400; color: var(--dempet); }
+.rapportmelding { color: var(--rod); font-size: 13px; font-weight: 600; margin: 0 0 8px; }
+.lenkeknapp.fare { color: var(--rod); margin-top: 18px; }
+.rapport-papir { overflow-y: auto; background: var(--bg); padding: 20px; }
+.rapport-papir .rapport { border-radius: 8px; box-shadow: var(--skygge); }
+#utskrift { display: none; }
+@media (max-width: 800px) {
+  .dialog { width: 100vw; height: 100vh; border-radius: 0; border: 0; }
+  .dialog-kropp { grid-template-columns: 1fr; overflow-y: auto; display: block; }
+  .rapport-skjema { border-right: 0; border-bottom: 1px solid var(--strek); overflow: visible; }
+  .rapport-papir { overflow: visible; padding: 12px; }
+}
+
+@media print {
+  body > :not(#utskrift) { display: none !important; }
+  body { background: #fff; }
+  #utskrift { display: block; }
+  @page { margin: 16mm; }
+}

@@ -56,7 +56,14 @@
   app.m.tom_systemet();
 
   const LAGER = "bremsesim.v1";
-  let lagret = { oppdrag: {}, sporsmal: {}, eksperiment: {}, finnfeil: { riktig: 0, forsok: 0, rekke: 0 }, test: { beste: null } };
+  // oppdrag[id] = dato fullført, startet[id] = dato først startet, steg[id] = flest steg gjort,
+  // forsteForsok["id:i"] = om kontrollspørsmålet ble besvart riktig på første forsøk.
+  const tomtLager = () => ({
+    oppdrag: {}, startet: {}, steg: {}, sporsmal: {}, forsteForsok: {}, eksperiment: {},
+    finnfeil: { riktig: 0, forsok: 0, rekke: 0 }, finnfeilLogg: [], test: { beste: null }, testLogg: [],
+    tidBrukt: 0, elev: { navn: "", klasse: "", kommentar: "" },
+  });
+  let lagret = tomtLager();
   try {
     const s = JSON.parse(localStorage.getItem(LAGER));
     if (s) lagret = Object.assign(lagret, s);
@@ -744,8 +751,11 @@
     faneinnhold.append(h("div", { class: "seksjonstittel" }, "Kontrollspørsmål"));
     o.sporsmal.forEach((s, i) => {
       const nokkel = o.id + ":" + i;
-      faneinnhold.append(sporsmalKort(s, (riktig) => {
-        if (riktig) { lagret.sporsmal[nokkel] = true; lagre(); sjekkFullfort(o); }
+      faneinnhold.append(sporsmalKort(s, (riktig, forste) => {
+        if (forste && lagret.forsteForsok[nokkel] === undefined) lagret.forsteForsok[nokkel] = riktig;
+        if (riktig) lagret.sporsmal[nokkel] = true;
+        lagre();
+        if (riktig) sjekkFullfort(o);
       }, { lagretRiktig: !!lagret.sporsmal[nokkel] }));
     });
     faneinnhold.append(h("div", { class: "ferdigmelding", id: "ferdigmelding", hidden: !lagret.oppdrag[o.id] }, "Oppdraget er fullført. Godt jobbet!"));
@@ -756,6 +766,7 @@
     settOppsett(o.oppsett);
     m._logg("=== Oppdrag startet: " + o.tittel + " ===");
     app.oppdrag = { id: o.id, start: m.logg.length, gjort: o.steg.map(() => false), holdt: {} };
+    if (!lagret.startet[o.id]) { lagret.startet[o.id] = new Date().toISOString(); lagre(); }
     app.visning = { type: "oppdrag", id: o.id };
     visFane();
   }
@@ -799,7 +810,11 @@
       const b = li.querySelector("button");
       if (b) b.hidden = gjort || !a;
     });
-    if (a) sjekkFullfort(I.OPPDRAG.find((o) => o.id === a.id));
+    if (a) {
+      const antall = a.gjort.filter(Boolean).length;
+      if (antall > (lagret.steg[a.id] || 0)) { lagret.steg[a.id] = antall; lagre(); }
+      sjekkFullfort(I.OPPDRAG.find((o) => o.id === a.id));
+    }
   }
 
   function sjekkFullfort(o) {
@@ -807,7 +822,7 @@
     const stegOk = a && a.id === o.id && a.gjort.every(Boolean);
     const sporsmalOk = o.sporsmal.every((_, i) => lagret.sporsmal[o.id + ":" + i]);
     if (stegOk && sporsmalOk && !lagret.oppdrag[o.id]) {
-      lagret.oppdrag[o.id] = true;
+      lagret.oppdrag[o.id] = new Date().toISOString();
       lagre();
     }
     const melding = $("ferdigmelding");
@@ -885,6 +900,8 @@
         f.svar = kandidat;
         ff.forsok++;
         if (kandidat === f.feil) { ff.riktig++; ff.rekke++; } else ff.rekke = 0;
+        lagret.finnfeilLogg.push({ dato: new Date().toISOString(), feil: f.feil.navn, svar: kandidat.navn,
+          riktig: kandidat === f.feil, hint: f.hint });
         lagre();
         visFane();
       } }, kandidat.navn);
@@ -934,10 +951,8 @@
       return;
     }
     if (t.i >= t.sporsmal.length) {
-      const ny = lagret.test.beste === null || t.poeng > lagret.test.beste;
-      if (ny) { lagret.test.beste = t.poeng; lagre(); }
       faneinnhold.append(
-        h("div", { class: "poeng" }, h("div", {}, h("b", {}, t.poeng + " / " + t.sporsmal.length), h("small", {}, ny ? "nytt beste resultat!" : "riktige svar"))),
+        h("div", { class: "poeng" }, h("div", {}, h("b", {}, t.poeng + " / " + t.sporsmal.length), h("small", {}, t.nyBeste ? "nytt beste resultat!" : "riktige svar"))),
         h("p", { class: "ingress" }, t.poeng >= 8 ? "Meget bra! Du har god kontroll på luftbremsene." : t.poeng >= 5 ? "Bra. Gå gjennom oppdragene der du var usikker." : "Prøv oppdragene og fagstoffet, og ta testen igjen."),
         h("button", { class: "knapp primar", onclick: () => { app.test = null; visFane(); } }, "Ta testen på nytt"),
       );
@@ -947,7 +962,16 @@
       h("div", { class: "kort-topp" }, h("span", { class: "brikke" }, "Spørsmål " + (t.i + 1) + " av " + t.sporsmal.length), h("span", { class: "brikke" }, t.poeng + " riktige")),
       h("div", { class: "framdrift" }, h("i", { style: `width:${(100 * t.i) / t.sporsmal.length}%` })),
     );
-    const neste = h("button", { class: "knapp primar", hidden: true, onclick: () => { t.i++; visFane(); } }, t.i + 1 < t.sporsmal.length ? "Neste" : "Se resultatet");
+    const neste = h("button", { class: "knapp primar", hidden: true, onclick: () => {
+      t.i++;
+      if (t.i >= t.sporsmal.length) {
+        t.nyBeste = lagret.test.beste === null || t.poeng > lagret.test.beste;
+        if (t.nyBeste) lagret.test.beste = t.poeng;
+        lagret.testLogg.push({ dato: new Date().toISOString(), poeng: t.poeng, av: t.sporsmal.length });
+        lagre();
+      }
+      visFane();
+    } }, t.i + 1 < t.sporsmal.length ? "Neste" : "Se resultatet");
     faneinnhold.append(sporsmalKort(t.sporsmal[t.i], (riktig) => {
       if (riktig) t.poeng++;
       neste.hidden = false;
@@ -1014,14 +1038,185 @@
     );
   }
 
+  // ================================================================== rapport
+  const RAPPORT_CSS = `
+.rapport { font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #142131; background: #fff;
+  max-width: 820px; margin: 0 auto; padding: 32px; box-sizing: border-box; }
+.rapport * { box-sizing: border-box; }
+.rapport h1 { font-size: 22px; margin: 0 0 2px; }
+.rapport h2 { font-size: 16px; margin: 26px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #1d6fe0; }
+.rapport .under { color: #5c6c7e; margin: 0 0 18px; }
+.rapport .elev { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 16px; border: 1px solid #dbe2ea;
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; }
+.rapport .elev small, .rapport .rute small { display: block; color: #5c6c7e; font-size: 12px; }
+.rapport .elev b { font-size: 15px; }
+.rapport .ruter { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.rapport .rute { border: 1px solid #dbe2ea; border-radius: 10px; padding: 10px 12px; background: #f6f8fb; }
+.rapport .rute b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+.rapport table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rapport th { text-align: left; color: #5c6c7e; font-weight: 600; border-bottom: 1px solid #b8c4d1; padding: 6px; }
+.rapport td { border-bottom: 1px solid #e6ebf1; padding: 6px; vertical-align: top; }
+.rapport td.tall { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rapport .ok { color: #1a7f45; font-weight: 600; }
+.rapport .nei { color: #c62828; font-weight: 600; }
+.rapport .graa { color: #7a8898; }
+.rapport .refleksjon { white-space: pre-wrap; border: 1px solid #dbe2ea; border-radius: 10px; padding: 12px; background: #f6f8fb; }
+.rapport .signatur { margin-top: 44px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; font-size: 12px; color: #5c6c7e; }
+.rapport .signatur div { border-top: 1px solid #142131; padding-top: 4px; }
+.rapport .bunntekst { margin-top: 28px; font-size: 12px; color: #5c6c7e; border-top: 1px solid #dbe2ea; padding-top: 10px; }
+@media print { .rapport { padding: 0; max-width: none; } .rapport tr, .rapport .rute { break-inside: avoid; } }
+@media (max-width: 600px) { .rapport { padding: 16px; } .rapport .elev { grid-template-columns: 1fr; } }
+`;
+  document.head.append(h("style", {}, RAPPORT_CSS));
+
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const visDato = (iso) => (iso ? new Date(iso).toLocaleString("nb-NO", { dateStyle: "short", timeStyle: "short" }) : "");
+  const varighet = (s) => {
+    const min = Math.round(s / 60);
+    return min < 60 ? min + " min" : Math.floor(min / 60) + " t " + (min % 60) + " min";
+  };
+
+  function rapportHTML() {
+    const e = lagret.elev;
+    const sporsmalTotalt = I.OPPDRAG.reduce((s, o) => s + o.sporsmal.length, 0);
+    const forste = Object.values(lagret.forsteForsok);
+    const ekspGjort = I.EKSPERIMENTER.filter((x) => lagret.eksperiment[x.id] !== undefined);
+    const ekspRiktig = ekspGjort.filter((x) => lagret.eksperiment[x.id] === x.riktig).length;
+    const ff = lagret.finnfeil;
+    const fullfort = I.OPPDRAG.filter((o) => lagret.oppdrag[o.id]).length;
+    const rute = (tall, tekst) => `<div class="rute"><b>${tall}</b><small>${tekst}</small></div>`;
+
+    const oppdragRader = I.OPPDRAG.map((o, i) => {
+      const ferdig = lagret.oppdrag[o.id];
+      const status = ferdig ? `<span class="ok">Fullført</span> ${typeof ferdig === "string" ? visDato(ferdig) : ""}`
+        : lagret.startet[o.id] ? "Påbegynt" : '<span class="graa">Ikke startet</span>';
+      const steg = ferdig ? o.steg.length : (lagret.steg[o.id] || 0);
+      const riktigeForste = o.sporsmal.filter((_, j) => lagret.forsteForsok[o.id + ":" + j] === true).length;
+      const besvart = o.sporsmal.filter((_, j) => lagret.forsteForsok[o.id + ":" + j] !== undefined).length;
+      return `<tr><td class="tall">${i + 1}</td><td>${esc(o.tittel)}</td><td>${status}</td>` +
+        `<td class="tall">${steg} / ${o.steg.length}</td>` +
+        `<td class="tall">${besvart ? riktigeForste + " / " + o.sporsmal.length : '<span class="graa">–</span>'}</td></tr>`;
+    }).join("");
+
+    const ekspRader = I.EKSPERIMENTER.map((x) => {
+      const g = lagret.eksperiment[x.id];
+      if (g === undefined) return `<tr><td>${esc(x.tittel)}</td><td colspan="3" class="graa">Ikke gjennomført</td></tr>`;
+      const ok = g === x.riktig;
+      return `<tr><td>${esc(x.tittel)}</td><td>${esc(x.valg[g])}</td><td>${esc(x.valg[x.riktig])}</td>` +
+        `<td class="${ok ? "ok" : "nei"}">${ok ? "Riktig" : "Feil"}</td></tr>`;
+    }).join("");
+
+    const ffRader = lagret.finnfeilLogg.map((f) => `<tr><td class="tall">${visDato(f.dato)}</td><td>${esc(f.feil)}</td><td>${esc(f.svar)}</td>` +
+      `<td class="${f.riktig ? "ok" : "nei"}">${f.riktig ? "Riktig" : "Feil"}</td><td>${f.hint ? "Ja" : "Nei"}</td></tr>`).join("");
+
+    const testRader = lagret.testLogg.map((t) => `<tr><td class="tall">${visDato(t.dato)}</td><td class="tall">${t.poeng} / ${t.av}</td></tr>`).join("");
+
+    return `<article class="rapport">
+<h1>Rapport – trykkluftbremser</h1>
+<p class="under">Luftbrems treningssimulator · førerkort C/CE</p>
+<div class="elev">
+  <div><small>Elev</small><b>${esc(e.navn) || '<span class="graa">(ikke oppgitt)</span>'}</b></div>
+  <div><small>Klasse / gruppe</small><b>${esc(e.klasse) || '<span class="graa">–</span>'}</b></div>
+  <div><small>Rapport laget</small><b>${visDato(new Date().toISOString())}</b></div>
+</div>
+<div class="ruter">
+  ${rute(fullfort + " / " + I.OPPDRAG.length, "oppdrag fullført")}
+  ${rute(forste.filter(Boolean).length + " / " + forste.length, "spørsmål riktig på 1. forsøk (av " + sporsmalTotalt + ")")}
+  ${rute(ekspRiktig + " / " + ekspGjort.length, "eksperimenter gjettet riktig")}
+  ${rute(ff.riktig + " / " + ff.forsok, "Finn feilen: riktige diagnoser")}
+  ${rute(lagret.test.beste === null ? "–" : lagret.test.beste + " / 10", "beste kunnskapstest")}
+  ${rute(varighet(lagret.tidBrukt), "tid brukt i simulatoren")}
+</div>
+<h2>Oppdrag</h2>
+<table><thead><tr><th>#</th><th>Oppdrag</th><th>Status</th><th>Steg</th><th>Riktig 1. forsøk</th></tr></thead><tbody>${oppdragRader}</tbody></table>
+<h2>Eksperimenter</h2>
+<table><thead><tr><th>Eksperiment</th><th>Elevens gjetning</th><th>Riktig svar</th><th>Resultat</th></tr></thead><tbody>${ekspRader}</tbody></table>
+<h2>Finn feilen</h2>
+${ffRader ? `<table><thead><tr><th>Tidspunkt</th><th>Skjult feil</th><th>Elevens diagnose</th><th>Resultat</th><th>Hint brukt</th></tr></thead><tbody>${ffRader}</tbody></table>` : '<p class="graa">Ikke gjennomført.</p>'}
+<h2>Kunnskapstest</h2>
+${testRader ? `<table><thead><tr><th>Tidspunkt</th><th>Poeng</th></tr></thead><tbody>${testRader}</tbody></table>` : '<p class="graa">Ikke gjennomført.</p>'}
+<h2>Refleksjon</h2>
+${e.kommentar.trim() ? `<div class="refleksjon">${esc(e.kommentar.trim())}</div>` : '<p class="graa">Ingen refleksjon skrevet.</p>'}
+<div class="signatur"><div>Elevens underskrift</div><div>Lærer / instruktør</div></div>
+<p class="bunntekst">Resultatene er registrert i simulatoren i elevens nettleser. Verdiene i simulatoren er typiske og ment for opplæring – følg alltid produsentens verdier og instruktørens anvisninger for et konkret kjøretøy.</p>
+</article>`;
+  }
+
+  const dialog = $("rapportdialog");
+  const forhand = $("rapportForhand");
+  const rapportFelt = { navn: $("elevNavn"), klasse: $("elevKlasse"), kommentar: $("elevKommentar") };
+  const visForhand = () => { forhand.innerHTML = rapportHTML(); };
+
+  for (const [k, felt] of Object.entries(rapportFelt)) {
+    felt.addEventListener("input", () => {
+      lagret.elev[k] = felt.value;
+      lagre();
+      $("rapportMelding").hidden = true;
+      visForhand();
+    });
+  }
+
+  $("rapportKnapp").addEventListener("click", () => {
+    for (const [k, felt] of Object.entries(rapportFelt)) felt.value = lagret.elev[k];
+    $("rapportMelding").hidden = true;
+    visForhand();
+    dialog.showModal();
+  });
+  $("lukkRapport").addEventListener("click", () => dialog.close());
+  dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+
+  const harNavn = () => {
+    if (lagret.elev.navn.trim()) return true;
+    $("rapportMelding").hidden = false;
+    rapportFelt.navn.focus();
+    return false;
+  };
+
+  $("skrivUt").addEventListener("click", () => {
+    if (!harNavn()) return;
+    lagre();
+    $("utskrift").innerHTML = rapportHTML();
+    window.print();
+  });
+
+  $("lastNed").addEventListener("click", () => {
+    if (!harNavn()) return;
+    lagre();
+    const navn = lagret.elev.navn.trim();
+    const dok = `<!doctype html>\n<html lang="nb"><head><meta charset="utf-8">` +
+      `<meta name="viewport" content="width=device-width, initial-scale=1">` +
+      `<title>Bremserapport – ${esc(navn)}</title><style>${RAPPORT_CSS}\nbody { margin: 0; background: #eef2f6; padding: 24px 0; }` +
+      `\n@media print { body { background: #fff; padding: 0; } }</style></head><body>${rapportHTML()}</body></html>`;
+    const slug = navn.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/æ/g, "ae").replace(/ø/g, "o").replace(/å/g, "a").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const a = h("a", { href: URL.createObjectURL(new Blob([dok], { type: "text/html" })),
+      download: `bremserapport-${slug || "elev"}-${new Date().toISOString().slice(0, 10)}.html` });
+    document.body.append(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  });
+
+  $("nullstill").addEventListener("click", () => {
+    if (!confirm("Vil du slette all fremgang, alle resultater og navnet ditt fra denne nettleseren? Dette kan ikke angres.")) return;
+    lagret = tomtLager();
+    try { localStorage.removeItem(LAGER); } catch (e) { /* ignorer */ }
+    location.reload();
+  });
+
   // ==================================================================== løkke
   let sist = performance.now();
   let sistGraf = 0;
+  let sistLagret = 0;
+  window.addEventListener("pagehide", lagre);
   const glatt = new Map();
 
   function ramme(naa) {
     const dtReell = Math.min(0.1, Math.max(0, (naa - sist) / 1000));
     sist = naa;
+    if (!document.hidden) {
+      lagret.tidBrukt += dtReell;
+      if (naa - sistLagret > 15000) { lagre(); sistLagret = naa; }
+    }
     if (!app.pause && dtReell > 0) {
       m.pedal = app.pedalHoldt ? 1.0 : app.pedalVerdi / 100;
       const dtSim = dtReell * app.fart;

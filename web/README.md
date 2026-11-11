@@ -23,6 +23,19 @@ Siden kan også legges ut som en statisk nettside, for eksempel med GitHub Pages
 
 Fremgangen lagres i nettleseren (localStorage) på den maskinen eleven bruker.
 
+## Rapport for levering
+
+Knappen **Rapport** øverst til høyre lager en rapport over alt eleven har gjort:
+
+- navn, klasse og tidspunkt
+- sammendrag: oppdrag fullført, kontrollspørsmål riktig på første forsøk, eksperimenter, Finn feilen, beste test og tid brukt
+- tabeller for oppdrag (status, dato og steg), eksperimenter (gjetning og riktig svar), alle feilsøkinger og alle testforsøk
+- elevens egen refleksjon og linjer for underskrift fra elev og lærer
+
+Eleven kan skrive ut rapporten eller lagre den som PDF, eller laste den ned som en HTML-fil. Navn må fylles inn før levering. Knappen **Nullstill all fremgang** sletter alt fra nettleseren, for eksempel på delte maskiner.
+
+Resultatene ligger bare i elevens nettleser, så rapporten er ikke et sikkert bevis. Den er ment som dokumentasjon av arbeidet.
+
 ## Tester
 
 ```
