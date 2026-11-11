@@ -1,0 +1,40 @@
+# Bremsesimulator – lastebil med trykkluftbrems
+
+En simulering av luftbremsesystemet på en lastebil, laget for opplæring til førerkort C/CE.
+
+## Kjøre
+
+Det trengs bare Python 3 (fra python.org, med standardvalget «tcl/tk» huket av). Ingen andre pakker.
+
+```
+python bremsesimulator.py      # starter simulatoren
+python test_bremsemodell.py    # kjører testene av fysikkmodellen
+```
+
+## Hva som er med
+
+| Del | Hva den gjør i modellen |
+|---|---|
+| Kompressor | Leverer luft. Mengden øker med turtallet og synker når trykket stiger. |
+| Regulator + lufttørker | Kutter ut ved 10,0 bar og inn igjen ved 8,5 bar. Er tørkeren defekt, samler det seg vann i tankene. |
+| Firekretsventil | Fyller krets 1 og 2 først. En lekkasje i én krets tømmer ikke de andre. |
+| Krets 1 / 2 | Driftsbremsen foran og bak, styrt av fotbremsventilen med to kretser. Bak går luften via en reléventil. |
+| Krets 3 | Håndbremsventil og relé til fjærbremsdelen i kombisylindrene bak. Fjærbremsen er på når det er lite luft, og trenger minst ca. 5,5 bar for å bli helt løst. |
+| Krets 4 | Tilleggsutstyr. |
+| Varsling | Lampen for lavt lufttrykk tennes under 5,5 bar i krets 1 eller 2. |
+
+Betjening: motor av/på og turtall, bremsepedal (hold **B** for å tråkke helt ned), håndbremsspak, lekkasjer i hver krets og i bremsesylinderen bak, defekt lufttørker, tapping av vann, og simuleringsfart opp til 20x.
+
+## Øvelser
+
+1. Fylle systemet fra tomt
+2. Lekkasjekontroll (motor av)
+3. Pumpetest og varsellampe
+4. Nødbrems: luftlekkasje i krets 3
+5. Kretssikring (firekretsventil)
+6. Finn feilen (skjult, tilfeldig feil, med fasit)
+7. Vann i tankene (lufttørker)
+
+## Forbehold
+
+Trykk, volumer og tider er typiske verdier, ikke verdier for en bestemt bil. Modellen er forenklet: tilhenger, ABS/EBS, retarder og bilens bevegelse er ikke med. Grenseverdier ved kontroll skal du alltid hente fra produsenten eller instruktøren.
