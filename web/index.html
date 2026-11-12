@@ -53,6 +53,19 @@
         <div class="rull"><svg id="kjoretoy" viewBox="0 0 1000 210" role="img" aria-label="Lastebil med tilhenger"></svg></div>
       </div>
 
+      <div class="kort klokkekort">
+        <div class="kort-topp">
+          <h2>Bremseklokke i aksjon</h2>
+          <div class="segment" id="klokkevalg" role="group" aria-label="Velg bremseklokke">
+            <button data-klokke="bak" class="valgt">Bak, trekkbil</button><button data-klokke="foran">Foran</button><button data-klokke="tilh">Tilhenger</button>
+          </div>
+        </div>
+        <div class="rull"><svg id="klokke" viewBox="0 0 1000 300" role="img" aria-label="Gjennomskåret bremseklokke med bremsearm og bremsetrommel"></svg></div>
+        <dl class="klokkedata" id="klokkedata"></dl>
+        <p class="klokkeforklaring" id="klokkeforklaring"></p>
+        <p class="hjelp">Bremseklokka følger simulatoren: tråkk på bremsen (hold B), bruk håndbremsspaken eller slipp ut lufta, og se hva som skjer inni. <button class="lenkeknapp" id="klokkeFag">Les mer i fagstoffet</button></p>
+      </div>
+
       <div class="kort grafkort">
         <div class="kort-topp"><h2>Trykk over tid</h2><span class="hjelp">siste 3 minutter simulert tid · klikk for å vise/skjule</span></div>
         <div class="seriebrytere" id="serier"></div>

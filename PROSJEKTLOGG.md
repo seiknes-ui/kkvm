@@ -49,7 +49,11 @@ Senere bestillinger:
 | 9 | «Push til git» | Ingenting nytt å pushe. Lokal `main` var lik `origin/main`. | – |
 | 10 | «Lag en prosjektfil» | `pyproject.toml` med kommandoen `bremsesimulator` og oppsett for pytest. Testet i et eget miljø (venv). | `1910643` |
 | 11 | «Push to git» | Ingenting nytt å pushe. | – |
-| 12 | Prosjektlogg | Denne filen. | (se git-loggen) |
+| 12 | Prosjektlogg | Denne filen. | `bf092d3` |
+| 13 | «Push til git» | Ingenting nytt å pushe. | – |
+| 14 | «Pull fra git» | Hentet tre commits brukeren hadde laget utenom denne samtalen: oppskrift for frittstående exe med PyInstaller, nettversjon i `web/` og elevrapport. | `3dcee5c`, `a889340`, `015868d` |
+| 15 | «Kjør nettversjonen» | JS-testene kjørt (18/18), og siden er åpnet i nettleseren. Sjekket med en Edge uten vindu at den vises. | – |
+| 16 | Modul: bremseklokke i aksjon | Nytt kort i nettversjonen med gjennomskåret bremseklokke, bremsearm og bremsetrommel som følger simulatoren. Ny fagstoff-oppføring. | (se git-loggen) |
 
 ---
 
@@ -66,6 +70,18 @@ Senere bestillinger:
 | `lastebil_brems/README.md` | Brukerveiledning. |
 | `.gitignore` | Holder midlertidige filer fra Python, pytest og installasjon utenfor git. |
 | `PROSJEKTLOGG.md` | Denne filen. |
+| `web/` | Nettversjonen (HTML/CSS/JS), med samme fysikkmodell, oppdrag, test, elevrapport og bremseklokke-modulen. Se `web/README.md`. |
+
+### Bremseklokke i aksjon (nettversjonen)
+
+Et animert, gjennomskåret bilde av en bremseklokke, rett under «Vogntoget». Bildet følger trykkene i simulatoren:
+
+- **Fjærbremsdel:** fjæren presses sammen når det er luft bak stempelet, og strekker seg ut når lufta forsvinner (parkering eller nødbrems).
+- **Driftsbremsdel:** lufta presser membranen mot returfjæren og skyver trykkstangen ut.
+- **Trykkstang, bremsearm (slakkjusterer) og kamaksel:** bremsearmen dreies etter slaglengden.
+- **Bremsetrommel:** S-kammen presser bakkene ut. Halve slaget tar opp klaringen, og deretter bygges kraften opp. Trommelen gløder etter bremsekraften.
+- **Valg:** kombisylinder bak, membransylinder foran eller tilhengerens kombisylinder.
+- **Avlesning og forklaring:** trykk, slaglengde (ca. 0–60 mm) og bremsekraft, med en tekst som forklarer hva som skjer. Inkludert overbelastningsvernet når fjær og luft virker samtidig.
 
 ### Komponenter i modellen
 

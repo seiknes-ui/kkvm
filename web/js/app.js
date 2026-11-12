@@ -484,6 +484,237 @@
     kj.sortKnapp.setAttribute("r", m.t_sort_knapp_inne ? 6 : 9);
   }
 
+  // ============================================================= bremseklokke
+  // Gjennomskåret bremseklokke (membran- eller kombisylinder) med trykkstang, bremsearm
+  // (slakkjusterer), S-kam og bremsetrommel. Alt følger trykkene i modellen.
+  const BK = $("klokke");
+  const BK_VALG = {
+    bak: {
+      navn: "kombisylinder bak på trekkbilen", fag: "kombi", fjaer: true,
+      drift: () => m.bak, fjaerNode: () => m.fjaer, fjaerAndel: () => m.fjaerbrems_andel,
+      kraft: () => m.bremsekraft_bak,
+      portDrift: "Driftsbrems: fra reléventil (krets 2)", portFjaer: "Fjærbrems: fra håndbremsventil (krets 3)",
+    },
+    foran: {
+      navn: "membransylinder foran", fag: "foran", fjaer: false,
+      drift: () => m.foran, kraft: () => m.bremsekraft_foran,
+      portDrift: "Driftsbrems: fra fotbremsventil (krets 1)",
+    },
+    tilh: {
+      navn: "kombisylinder på tilhengeren", fag: "tilhsyl", fjaer: true,
+      drift: () => m.t_drift, fjaerNode: () => m.t_fjaer, fjaerAndel: () => m.tilh_fjaer_andel,
+      kraft: () => m.bremsekraft_tilhenger,
+      portDrift: "Driftsbrems: fra nødreléet", portFjaer: "Fjærbrems: fra tilhengertanken",
+    },
+  };
+  const bk = { valg: "bak" };
+  // Geometri
+  const BK_G = {
+    platBase: 372, slag: 60,          // membranplatens hvileposisjon og maks slag (px)
+    stempelBase: 130, stangLengde: 222, // fjærstempel og stempelstang
+    armPivot: [690, 240], armL: 95, trykkstang: 288,
+    trommel: [870, 150], forankring: [870, 72], skam: [870, 222],
+  };
+  // Trykkstangens slag (0..1): først luftspalten (0..0,5), så kraft mot trommelen (0,5..1).
+  const slagAndel = (kraft) => Math.min(1, kraft * 12) * 0.5 + 0.5 * kraft;
+
+  function sikksakk(x0, x1, yTopp, yBunn, n) {
+    const steg = (x1 - x0) / (2 * n);
+    let d = `M${x0} ${(yTopp + yBunn) / 2}`;
+    for (let i = 0; i < 2 * n; i++) d += ` L${x0 + steg * (i + 1)} ${i % 2 === 0 ? yTopp : yBunn}`;
+    return d + ` L${x1} ${(yTopp + yBunn) / 2}`;
+  }
+
+  function byggKlokke() {
+    const g = BK_G;
+    // --- fjærbremsdel (venstre) ---
+    bk.fjaerdel = el("g", {}, BK);
+    el("rect", { x: 40, y: 60, width: 300, height: 180, rx: 22, class: "bk-hus" }, bk.fjaerdel);
+    bk.fjaerLuft = el("rect", { x: 150, y: 66, width: 180, height: 168, class: "bk-luft", opacity: 0 }, bk.fjaerdel);
+    bk.fjaer = el("path", { d: "", class: "bk-fjaer" }, bk.fjaerdel);
+    bk.stempel = el("rect", { x: 130, y: 66, width: 14, height: 168, rx: 3, class: "bk-stempel" }, bk.fjaerdel);
+    bk.stempelStang = el("rect", { x: 144, y: 143, width: 208, height: 14, rx: 3, class: "bk-stang" }, bk.fjaerdel);
+    el("rect", { x: 16, y: 141, width: 26, height: 18, rx: 3, class: "bk-stang" }, bk.fjaerdel);
+    el("text", { x: 46, y: 254, class: "bk-tekst" }, bk.fjaerdel, "nødløsebolt");
+    el("text", { x: 60, y: 52, class: "bk-tekst sterk" }, bk.fjaerdel, "FJÆRBREMSDEL");
+    el("line", { x1: 250, y1: 24, x2: 250, y2: 62, class: "bk-port" }, bk.fjaerdel);
+    bk.fjaerPortLuft = el("line", { x1: 250, y1: 26, x2: 250, y2: 62, class: "bk-port-luft", opacity: 0 }, bk.fjaerdel);
+    bk.fjaerPortTekst = el("text", { x: 262, y: 20, class: "bk-tekst" }, bk.fjaerdel);
+    bk.fjaerFlyt = el("text", { x: 250, y: 92, class: "bk-flyt" }, bk.fjaerdel);
+    bk.lokk = el("rect", { x: 300, y: 70, width: 50, height: 160, rx: 14, class: "bk-hus bk-skjult" }, BK);
+
+    // --- driftsbremsdel (høyre) ---
+    el("rect", { x: 336, y: 70, width: 190, height: 160, rx: 30, class: "bk-hus" }, BK);
+    bk.driftLuft = el("path", { d: "", class: "bk-luft", opacity: 0 }, BK);
+    el("rect", { x: 330, y: 64, width: 14, height: 172, rx: 3, class: "bk-vegg" }, BK);
+    bk.returfjaer = el("path", { d: "", class: "bk-returfjaer" }, BK);
+    bk.membran = el("path", { d: "", class: "bk-membran" }, BK);
+    bk.plate = el("rect", { x: g.platBase - 4, y: 112, width: 10, height: 76, rx: 3, class: "bk-stempel" }, BK);
+    el("text", { x: 370, y: 62, class: "bk-tekst sterk" }, BK, "DRIFTSBREMSDEL");
+    el("text", { x: 452, y: 222, class: "bk-tekst midt" }, BK, "membran");
+    el("line", { x1: 337, y1: 270, x2: 337, y2: 232, class: "bk-port" }, BK);
+    bk.driftPortLuft = el("line", { x1: 337, y1: 268, x2: 337, y2: 234, class: "bk-port-luft", opacity: 0 }, BK);
+    bk.driftPortTekst = el("text", { x: 350, y: 288, class: "bk-tekst" }, BK);
+    bk.driftFlyt = el("text", { x: 362, y: 252, class: "bk-flyt" }, BK);
+
+    // --- trykkstang, bremsearm og kamaksel ---
+    bk.trykkstang = el("line", { x1: 0, y1: 150, x2: 0, y2: 150, class: "bk-arm", style: "stroke-width:8px" }, BK);
+    el("line", { x1: g.armPivot[0], y1: g.armPivot[1], x2: g.skam[0], y2: g.skam[1], class: "bk-aksel" }, BK);
+    el("text", { x: 780, y: 262, class: "bk-tekst midt" }, BK, "kamaksel");
+    bk.arm = el("line", { x1: g.armPivot[0], y1: g.armPivot[1], x2: g.armPivot[0], y2: g.armPivot[1] - g.armL, class: "bk-arm" }, BK);
+    el("circle", { cx: g.armPivot[0], cy: g.armPivot[1], r: 12, class: "bk-ledd" }, BK);
+    bk.gaffel = el("circle", { cx: 0, cy: 150, r: 7, class: "bk-ledd" }, BK);
+    el("text", { x: g.armPivot[0], y: 288, class: "bk-tekst midt" }, BK, "bremsearm (slakkjusterer)");
+    el("text", { x: 600, y: 140, class: "bk-tekst midt" }, BK, "trykkstang");
+
+    // --- bremsetrommel med bakker og S-kam ---
+    const [cx, cy] = g.trommel;
+    el("circle", { cx, cy, r: 92, class: "bk-trommel" }, BK);
+    bk.glod = el("circle", { cx, cy, r: 84, class: "bk-glod", opacity: 0 }, BK);
+    const pkt = (r, a) => [cx + r * Math.cos(a * Math.PI / 180), cy - r * Math.sin(a * Math.PI / 180)];
+    const bue = (r, a0, a1, sveip) => {
+      const [x0, y0] = pkt(r, a0), [x1, y1] = pkt(r, a1);
+      return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 0 ${sveip} ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+    };
+    bk.skoV = el("g", {}, BK);
+    el("path", { d: bue(70, 100, 255, 0), class: "bk-sko" }, bk.skoV);
+    el("path", { d: bue(76, 112, 243, 0), class: "bk-belegg" }, bk.skoV);
+    bk.skoH = el("g", {}, BK);
+    el("path", { d: bue(70, 80, -75, 1), class: "bk-sko" }, bk.skoH);
+    el("path", { d: bue(76, 68, -63, 1), class: "bk-belegg" }, bk.skoH);
+    el("circle", { cx: g.forankring[0], cy: g.forankring[1], r: 7, class: "bk-ledd" }, BK);
+    bk.skam = el("path", { d: "M-15 5 Q-7 -13 0 0 Q7 13 15 -5", class: "bk-skam" }, BK);
+    el("text", { x: cx, y: 30, class: "bk-tekst midt sterk" }, BK, "BREMSETROMMEL");
+    bk.kraftTekst = el("text", { x: cx, y: 146, class: "bk-tekst midt sterk", style: "font-size:16px" }, BK);
+    bk.kraftUnder = el("text", { x: cx, y: 164, class: "bk-tekst midt" }, BK, "bremsekraft");
+
+    // --- data og knapper ---
+    bk.data = {};
+    for (const [id, navn] of [["drift", "Driftsbremsdel"], ["fjaer", "Fjærbremsdel"], ["slag", "Slaglengde"], ["kraft", "Bremsekraft"]]) {
+      const d = h("dd");
+      const rad = h("div", {}, h("dt", {}, navn), d);
+      $("klokkedata").append(rad);
+      bk.data[id] = { d, rad };
+    }
+    document.querySelectorAll("#klokkevalg button").forEach((b) => b.addEventListener("click", () => {
+      bk.valg = b.dataset.klokke;
+      document.querySelectorAll("#klokkevalg button").forEach((x) => x.classList.toggle("valgt", x === b));
+      bk.sistForklaring = null;
+    }));
+    $("klokkeFag").addEventListener("click", () => visFagstoff("bremseklokke"));
+  }
+  byggKlokke();
+
+  function flytTekst(t, dp) {
+    if (dp > 0.3) { t.textContent = "▼ luft inn"; t.setAttribute("class", "bk-flyt inn"); }
+    else if (dp < -0.3) { t.textContent = "▲ pssst – luft ut"; t.setAttribute("class", "bk-flyt ut"); }
+    else t.textContent = "";
+  }
+
+  function klokkeForklaring(v, pDrift, pFjaer, driftAndel, fjaerAndel, kraft) {
+    const deler = [];
+    if (v.fjaer) {
+      if (fjaerAndel > 0.98) {
+        deler.push(`<b>Fjærbremsen er på.</b> Det er bare ${fmt(pFjaer)} bar i fjærbremsdelen, så den kraftige fjæren skyver stempelet og trykkstangen ut. Slik står bilen parkert – og slik bremser den hvis lufta forsvinner.`);
+      } else if (fjaerAndel > 0.02) {
+        deler.push(`<b>Fjærbremsen ligger delvis på.</b> ${fmt(pFjaer)} bar er for lite til å holde fjæren helt sammenpresset. Det trengs ca. ${fmt(bm.P_FJAER_LOS)} bar for å løse den helt.`);
+      }
+    }
+    if (driftAndel > 0.02) {
+      deler.push(`<b>Driftsbremsen virker.</b> Luft (${fmt(pDrift)} bar) fyller kammeret bak membranen og presser trykkstangen ut. Bremsearmen vrir kamakselen, S-kammen presser bakkene mot trommelen.`);
+    }
+    if (v.fjaer && driftAndel > 0.02 && fjaerAndel > 0.02) {
+      deler.push("<b>Overbelastningsvern:</b> kreftene fra fjær og luft legges ikke sammen – det sterkeste vinner.");
+    }
+    if (!deler.length) {
+      deler.push(v.fjaer
+        ? `<b>Bremsen er løst.</b> Luft (${fmt(pFjaer)} bar) holder fjæren sammenpresset, og driftsbremsdelen er tom. Returfjæren holder trykkstangen inne, og bakkene går fri av trommelen.`
+        : "<b>Bremsen er løst.</b> Det er ingen luft bak membranen. Returfjæren holder trykkstangen inne, og bakkene går fri av trommelen.");
+    }
+    if (kraft > 0.02) deler.push(`Bremsekraft: <b>${pst(kraft)}</b>.`);
+    return deler.join(" ");
+  }
+
+  function oppdaterKlokke() {
+    const v = BK_VALG[bk.valg];
+    const g = BK_G;
+    const drift = v.drift();
+    const pDrift = drift.trykk;
+    const driftAndel = klem(pDrift / bm.P_FULL_BREMS);
+    const fjaerNode = v.fjaer ? v.fjaerNode() : null;
+    const pFjaer = fjaerNode ? fjaerNode.trykk : 0;
+    const fjaerAndel = v.fjaer ? v.fjaerAndel() : 0;
+    const kraft = v.kraft();
+
+    // Fjærbremsdelen
+    for (const e of [bk.fjaerdel]) e.classList.toggle("bk-skjult", !v.fjaer);
+    bk.lokk.classList.toggle("bk-skjult", v.fjaer);
+    const slagFjaer = slagAndel(fjaerAndel);
+    const stempelX = g.stempelBase + Math.min(1, fjaerAndel * 12) * 20 + slagFjaer * g.slag;
+    const slag = Math.max(slagAndel(driftAndel), v.fjaer ? slagFjaer : 0);
+    const platX = g.platBase + slag * g.slag;
+    if (v.fjaer) {
+      bk.stempel.setAttribute("x", stempelX.toFixed(1));
+      bk.stempelStang.setAttribute("x", (stempelX + 14).toFixed(1));
+      bk.fjaer.setAttribute("d", sikksakk(46, stempelX - 1, 80, 220, 6));
+      bk.fjaerLuft.setAttribute("x", (stempelX + 14).toFixed(1));
+      bk.fjaerLuft.setAttribute("width", Math.max(0, 330 - stempelX - 14).toFixed(1));
+      bk.fjaerLuft.setAttribute("opacity", (0.85 * klem(pFjaer / 10)).toFixed(2));
+      bk.fjaerPortLuft.setAttribute("opacity", klem(pFjaer / 10).toFixed(2));
+      bk.fjaerPortTekst.textContent = v.portFjaer;
+      flytTekst(bk.fjaerFlyt, app.dp.get(fjaerNode) || 0);
+    }
+
+    // Driftsbremsdelen: membranen bukter seg mot platen
+    const kx = 2 * platX - 350;
+    const membran = `M350 72 Q${kx.toFixed(1)} 150 350 228`;
+    bk.membran.setAttribute("d", membran);
+    bk.driftLuft.setAttribute("d", `M342 72 L350 72 Q${kx.toFixed(1)} 150 350 228 L342 228 Z`);
+    bk.driftLuft.setAttribute("opacity", (0.85 * klem(pDrift / 10)).toFixed(2));
+    bk.driftPortLuft.setAttribute("opacity", klem(pDrift / 10).toFixed(2));
+    bk.driftPortTekst.textContent = v.portDrift;
+    flytTekst(bk.driftFlyt, app.dp.get(drift) || 0);
+    bk.plate.setAttribute("x", (platX - 4).toFixed(1));
+    bk.returfjaer.setAttribute("d", sikksakk(platX + 6, 518, 120, 180, 4));
+
+    // Trykkstang og bremsearm
+    const endeX = platX + g.trykkstang;
+    const sinV = klem((endeX - g.armPivot[0]) / g.armL, -1, 1);
+    const vinkel = Math.asin(sinV);
+    const endeY = g.armPivot[1] - g.armL * Math.cos(vinkel);
+    bk.trykkstang.setAttribute("x1", platX.toFixed(1));
+    bk.trykkstang.setAttribute("x2", endeX.toFixed(1));
+    bk.trykkstang.setAttribute("y2", endeY.toFixed(1));
+    bk.arm.setAttribute("x2", endeX.toFixed(1));
+    bk.arm.setAttribute("y2", endeY.toFixed(1));
+    bk.gaffel.setAttribute("cx", endeX.toFixed(1));
+    bk.gaffel.setAttribute("cy", endeY.toFixed(1));
+
+    // S-kam og bakker: bakkene når trommelen ved halvt slag
+    const kontakt = Math.min(1, slag / 0.5);
+    const [ax, ay] = g.forankring;
+    bk.skoV.setAttribute("transform", `rotate(${(3.2 * kontakt).toFixed(2)} ${ax} ${ay})`);
+    bk.skoH.setAttribute("transform", `rotate(${(-3.2 * kontakt).toFixed(2)} ${ax} ${ay})`);
+    const kamVinkel = (vinkel * 180 / Math.PI) * 2;
+    bk.skam.setAttribute("transform", `translate(${g.skam[0]} ${g.skam[1]}) rotate(${kamVinkel.toFixed(1)})`);
+    bk.glod.setAttribute("opacity", kraft.toFixed(2));
+    bk.glod.style.filter = kraft > 0.25 ? "drop-shadow(0 0 6px #e5484d)" : "";
+    bk.kraftTekst.textContent = pst(kraft);
+
+    // Data og forklaring
+    bk.data.drift.d.textContent = fmt(pDrift, 2) + " bar";
+    bk.data.fjaer.rad.style.display = v.fjaer ? "" : "none";
+    bk.data.fjaer.d.textContent = fmt(pFjaer, 2) + " bar · " + pst(fjaerAndel) + " på";
+    bk.data.slag.d.textContent = Math.round(slag * 60) + " mm" + (slag >= 0.5 ? " · bakkene ligger an" : "");
+    bk.data.kraft.d.textContent = pst(kraft);
+    const tekst = `<span class="dempet">Viser: ${v.navn}.</span> ` +
+      klokkeForklaring(v, pDrift, pFjaer, driftAndel, fjaerAndel, kraft);
+    if (tekst !== bk.sistForklaring) {
+      $("klokkeforklaring").innerHTML = tekst;
+      bk.sistForklaring = tekst;
+    }
+  }
+
   // ===================================================================== graf
   const SERIER = [
     { navn: "Krets 1", farge: "#e5484d", f: (m) => m.tanker.K1.trykk },
@@ -1246,6 +1477,7 @@ ${e.kommentar.trim() ? `<div class="refleksjon">${esc(e.kommentar.trim())}</div>
     AVLESNING.forEach(([, f], i) => { avlesEl[i].textContent = f(m); });
     oppdaterSkjema();
     oppdaterKjoretoy();
+    oppdaterKlokke();
     synkBetjening();
     behandleLogg();
     if (naa - sistGraf > 200) { tegnGraf(); sistGraf = naa; }

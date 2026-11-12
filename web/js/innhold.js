@@ -515,6 +515,8 @@
       sjafor: "Når rød kobles fra, nødbremser tilhengeren." },
     { id: "tilhtank", tittel: "Tilhengertank", tekst: "60 liter. Fylles via rød ledning. Gir luft til bremsesylindrene og løser fjærbremsen.",
       sjafor: "Vent til tanken er full før du kjører." },
+    { id: "bremseklokke", tittel: "Bremseklokke, bremsearm og S-kam", tekst: "Bremseklokka (bremsesylinderen) gjør lufttrykk om til kraft. I driftsbremsdelen presser lufta en gummimembran og trykkstangen ut. I fjærbremsdelen holder lufta en kraftig fjær sammenpresset. Forsvinner lufta, skyver fjæren stempelet og trykkstangen ut. Trykkstangen dreier bremsearmen (slakkjustereren), som vrir kamakselen. S-kammen inne i trommelen presser bremsebakkene mot trommelen. Den første delen av slaget tar bare opp klaringen. Først når bakkene ligger an, bygges bremsekraften opp.",
+      sjafor: "For langt slag på trykkstangen betyr slitte bremser eller feil på slakkjustereren. Se etter skader på membranhuset, og lytt etter lekkasjer når du bremser. Nødløsebolten må bare brukes ved berging." },
     { id: "tilhsyl", tittel: "Tilhengerens bremsesylindre", tekst: "Kombisylindre med driftsbremsdel og fjærbremsdel, som på trekkbilen.",
       sjafor: "Lekker tilhengertanken, setter fjærbremsen seg på når trykket faller." },
     { id: "knapper", tittel: "Rød og sort knapp", tekst: "Rød knapp: tilhengerens parkeringsbrems. Ute = fjærbremsen på. Sort knapp: løser nødbremsen med luft fra tanken, bare for skifting. Spretter ut av seg selv når rød ledning får trykk.",

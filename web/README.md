@@ -13,6 +13,7 @@ Siden kan også legges ut som en statisk nettside, for eksempel med GitHub Pages
 - **Førerhus:** to manometre (krets 1/2 og krets 3/tilhengertank), varsellamper og avlesninger.
 - **Systemskjema:** rørene farges etter trykk, og prikker viser hvor lufta strømmer. Klikk på en komponent for å lese om den, på en tank for å tappe den, og på koblingene for å koble til eller fra.
 - **Vogntoget:** hjulene gløder rødt etter bremsekraft. Slangene og den røde og sorte knappen på tilhengeren kan klikkes.
+- **Bremseklokke i aksjon:** gjennomskåret bremseklokke som følger simulatoren. Den viser fjærbremsdelen (fjær, stempel og luft), driftsbremsdelen (membran og returfjær), trykkstangen, bremsearmen (slakkjustereren), kamakselen, S-kammen og bakkene i bremsetrommelen. Velg kombisylinder bak, membransylinder foran eller tilhengerens kombisylinder. Trykk, slaglengde og bremsekraft vises, og en tekst forklarer hva som skjer.
 - **Betjening:** motor, turtall, bremsepedal (hold B eller mellomrom), håndbrems med kontrollstilling, og simuleringsfart opptil 20×.
 - **Oppdrag:** 11 guidede øvelser. Stegene krysses av automatisk, og kontrollspørsmålene må besvares.
 - **Eksperiment:** 6 oppgaver der eleven gjetter først og tester etterpå.
